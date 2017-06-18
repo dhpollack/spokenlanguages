@@ -1,0 +1,37 @@
+#!/bin/bash
+
+apt-get update
+apt-get install -y gcc make bzip2 ffmpeg unzip git wget
+
+UNAME="david"
+USRDIR="/home/"$UNAME
+SPKDIR="/spokenlanguages"
+
+if [ -f $USRDIR/.setup_complete ]; then
+    echo "Already Setup!"
+else
+
+    mkdir -p $USRDIR$SPKDIR/data/train $USRDIR$SPKDIR/data/test $USRDIR$SPKDIR/models
+    wget http://www.topcoder.com/contest/problem/SpokenLanguages/S1.zip -O $USRDIR$SPKDIR/data/S1.zip
+    wget http://www.topcoder.com/contest/problem/SpokenLanguages/S2.zip -O $USRDIR$SPKDIR/data/S2.zip
+    wget http://www.topcoder.com/contest/problem/SpokenLanguages/trainingset.csv -O $USRDIR$SPKDIR/data/trainingset.csv
+    wget http://www.topcoder.com/contest/problem/SpokenLanguages/testingset.csv -O $USRDIR$SPKDIR/data/testingset.csv
+    # install python3.6 with miniconda
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh
+    chmod 755 /tmp/miniconda3.sh
+    /tmp/miniconda3.sh -b -p $USRDIR/miniconda3
+    rm /tmp/miniconda3.sh
+    source $USRDIR/miniconda3/bin/activate
+    conda create -y -n hu
+    source activate hu
+    conda install -y pytorch torchvision -c soumith
+    #conda install pytorch torchvision cuda80 -c soumith
+    conda install -y scipy scikit-learn jupyter matplotlib h5py
+    pip install librosa
+    unzip $USRDIR$SPKDIR/data/S1.zip -d $USRDIR$SPKDIR/data/train
+    unzip $USRDIR$SPKDIR/data/S2.zip -d $USRDIR$SPKDIR/data/test
+    rm $USRDIR$SPKDIR/data/S*.zip
+    touch $USRDIR/.setup_complete
+    chown -Rf $UNAME:$UNAME $USRDIR
+    #https://stackoverflow.com/questions/21065922/how-to-open-a-specific-port-such-as-9090-in-google-compute-engi
+fi
