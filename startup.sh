@@ -10,12 +10,10 @@ SPKDIR="/spokenlanguages"
 if [ -f $USRDIR/.setup_complete ]; then
     echo "Already Setup!"
 else
-
+    git clone https://github.com/dhpollack/spokenlanguages.git $USRDIR$SPKDIR
     mkdir -p $USRDIR$SPKDIR/data/train $USRDIR$SPKDIR/data/test $USRDIR$SPKDIR/models
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S1.zip -O $USRDIR$SPKDIR/data/S1.zip
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S2.zip -O $USRDIR$SPKDIR/data/S2.zip
-    wget http://www.topcoder.com/contest/problem/SpokenLanguages/trainingset.csv -O $USRDIR$SPKDIR/data/trainingset.csv
-    wget http://www.topcoder.com/contest/problem/SpokenLanguages/testingset.csv -O $USRDIR$SPKDIR/data/testingset.csv
     # install python3.6 with miniconda
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh
     chmod 755 /tmp/miniconda3.sh

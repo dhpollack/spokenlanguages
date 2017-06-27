@@ -103,9 +103,14 @@ ENV/
 # Jupyter Notebooks
 .ipynb_checkpoints/
 
+# output folder
+output/
+
 # data files
 *.mp3
 *.zip
 *.h5
 *.npz
 
+# nano files
+*.swp

@@ -1,6 +1,8 @@
 import numpy as np
 import librosa
 
+print("Beginning test...")
+
 filelist = "data/trainingset.csv"
 
 l = []
