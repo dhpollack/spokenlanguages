@@ -8,11 +8,12 @@ def load_csv(filelist = "data/trainingset.csv"):
             fp, lab = line.strip().split(",")
             l.append([fp, lab])
     return(l)
-def process_audio_files(l, base_dir = "data/train/", N=100, lfilter = None):
+def process_audio_files(l, base_dir = "data/train/", N=None, lfilter = None):
     sigs = []
     srs = []
     labels = []
-    for fname, label in l[:N]:
+    l = l[:N] if l is not None else l
+    for fname, label in l:
         if (lfilter == None) or (label in lfilter):
             filename = base_dir + fname
             sig, sr = librosa.core.load(filename, sr=None)
