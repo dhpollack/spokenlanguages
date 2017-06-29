@@ -2,7 +2,7 @@ import numpy as np
 from load_data import *
 import matplotlib.pyplot as plt
 
-CMAP_COLOR = "gray"
+CMAP_COLOR = "jet"
 IMG_SIZE = (4, 3)
 
 audio_file_names = load_csv()

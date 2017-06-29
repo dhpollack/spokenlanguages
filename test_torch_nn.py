@@ -4,8 +4,9 @@ from load_data import *
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
+
+import models.simple as model
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -18,13 +19,15 @@ parser.add_argument('--epochs', type=int, default=5,
 parser.add_argument('--batch-size', type=int, default=8, metavar='b',
                     help='batch size')
 parser.add_argument('--languages', type=str, nargs='+', default=None,
-                    help='batch size')
+                    help='languages to filter by')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed')
 parser.add_argument('--cuda', action='store_true',
                     help='use CUDA')
 parser.add_argument('--log-interval', type=int, default=4, metavar='N',
                     help='reports per epoch')
+parser.add_argument('--file-list', type=str, default="data/trainingset.csv",
+                    help='csv file with audio files and labels')
 parser.add_argument('--save', type=str,  default='model.pt',
                     help='path to save the final model')
 args = parser.parse_args()
@@ -45,29 +48,7 @@ window_size = 2 ** 10
 mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size)
 print(mel_spectrograms.shape)
 
-
-class Net(nn.Module):
-    def __init__(self, num_targets):
-        super(Net, self).__init__()
-        self.fc1 = nn.Linear(109312, 1024)
-        self.fc2 = nn.Linear(1024, 256)
-        self.fc3 = nn.Linear(256, num_targets)
-
-    def forward(self, x):
-        x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
-
-net = Net(num_targets)
+net = model.Net(num_targets)
 print(net)
 
 
@@ -152,4 +133,4 @@ y_t = le.inverse_transform(labels_testing)
 print(y_t)
 print(accuracy_score(y_t, yhat))
 print(confusion_matrix(y_t, yhat))
-torch.save(net.state_dict(), "output/states/test_model_state")
+torch.save(net.state_dict(), "output/states/nn_model_state.pt")
