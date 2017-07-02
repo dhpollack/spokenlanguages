@@ -61,6 +61,35 @@ def get_chromagrams(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
         print('Hop Length: %.2fms'%hop_times)
     return(chromagrams)
 
+def get_grams(use_chromagrams = False, load_grams_from_disk = True, languages = None, use_log10 = True):
+    if load_grams_from_disk:
+        if use_chromagrams:
+            fp = "output/chromagrams.npz"
+        else:
+            fp = "output/melspectrograms.npz"
+        with np.load(fp) as data:
+            inputs = data["grams"]
+            labels = data["labels"]
+    else:
+        # Loading CSV file
+        lfilter_set = set(languages) if languages is not None else None
+        print("Loading CSV file")
+        audio_file_names = load_csv()
+        sigs, srs, labels = process_audio_files(audio_file_names, lfilter=lfilter_set)
+
+        # Create spectrograms or chromagrams
+        print("Creating -grams")
+        window_size = 2 ** 10
+        if use_chromagrams:
+            chromagrams = get_chromagrams(sigs, srs, wsize = window_size, log10 = use_log10)
+            inputs = chromagrams
+            print(chromagrams.shape)
+        else:
+            mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size, log10 = use_log10)
+            inputs = mel_spectrograms
+            print(mel_spectrograms.shape)
+    return(inputs, labels)
+
 #audio_file_names = load_csv()
 #spectrograms, sample_rates, labels = get_mel_spectrograms(audio_file_names)
 #print(len(audio_file_names))

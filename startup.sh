@@ -11,7 +11,7 @@ if [ -f $USRDIR/.setup_complete ]; then
     echo "Already Setup!"
 else
     git clone https://github.com/dhpollack/spokenlanguages.git $USRDIR$SPKDIR
-    mkdir -p $USRDIR$SPKDIR/data/train $USRDIR$SPKDIR/data/test $USRDIR$SPKDIR/models
+    mkdir -p $USRDIR$SPKDIR/data/train $USRDIR$SPKDIR/data/test $USRDIR$SPKDIR/models $USRDIR$SPKDIR/output/states
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S1.zip -O $USRDIR$SPKDIR/data/S1.zip
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S2.zip -O $USRDIR$SPKDIR/data/S2.zip
     # install python3.6 with miniconda

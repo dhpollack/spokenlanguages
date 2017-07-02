@@ -33,51 +33,44 @@ parser.add_argument('--log-interval', type=int, default=4, metavar='N',
                     help='reports per epoch')
 parser.add_argument('--file-list', type=str, default="data/trainingset.csv",
                     help='csv file with audio files and labels')
+parser.add_argument('--load-grams', action='store_true',
+                    help='load spectro/chroma -grams')
 parser.add_argument('--load-model', action='store_true',
                     help='load model from disk')
-parser.add_argument('--save', type=str,  default='model.pt',
+parser.add_argument('--save-model', action='store_true',
                     help='path to save the final model')
 args = parser.parse_args()
 
-# Loading CSV file
-lfilter_set = set(args.languages) if args.languages is not None else None
-print("Loading CSV file")
-audio_file_names = load_csv()
-sigs, srs, labels = process_audio_files(audio_file_names, lfilter=lfilter_set)
+# set seed
+torch.manual_seed(args.seed)
+
+# load spectro/chroma -grams
+inputs, labels = get_grams(use_chromagrams = args.use_chromagrams,
+                           load_grams_from_disk = args.load_grams,
+                           languages = args.languages, use_log10 = True)
 le = LabelEncoder()
 le.fit(labels)
 labels_encoded = le.transform(labels)
 num_targets = le.classes_.shape[0]
 
-# Create spectrograms or chromagrams
-print("Creating -grams")
-window_size = 2 ** 10
-use_spectrograms = not args.use_chromagrams # this is stupid
-if use_spectrograms:
-    mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size, log10 = True)
-    inputs = mel_spectrograms
-    print(mel_spectrograms.shape)
-else:
-    chromagrams = get_chromagrams(sigs, srs, wsize = window_size, log10 = True)
-    inputs = chromagrams
-    print(chromagrams.shape)
-
 
 # Create Network
-model_save_path = "output/states/cnn_model_state.pt"
-use_saved_model = args.load_model
+gtype = "chroma" if args.use_chromagrams else "spectra"
+model_save_path = "output/states/cnn_model_"+gtype+".pt"
 net = model.Net(num_targets)
-if use_saved_model:
+if args.load_model:
     net.load_state_dict(torch.load(model_save_path))
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(net.parameters())
+optimizer = optim.Adam(net.parameters(), lr=args.lr)
 print(net)
 
 # create training and testing sets
 b = args.batch_size
 shuffle_inputs = True
-train_frac = 0.9
-do_validation = args.validate
+if args.validate:
+    train_frac = 0.9
+else:
+    train_frac = 1.0
 train_idx = int(len(inputs) * train_frac)
 inputs_training = inputs[:train_idx]
 labels_training = labels_encoded[:train_idx]
@@ -87,10 +80,11 @@ labels_training = torch.from_numpy(labels_training)
 trainset = TensorDataset(inputs_training, labels_training)
 trainloader = DataLoader(trainset, batch_size=b, shuffle=shuffle_inputs)
 
-inputs_testing = inputs[train_idx:]
-inputs_testing = torch.from_numpy(inputs_testing).float()
-inputs_testing.unsqueeze_(1)
-labels_testing = labels_encoded[train_idx:]
+if args.validate:
+    inputs_testing = inputs[train_idx:]
+    inputs_testing = torch.from_numpy(inputs_testing).float()
+    inputs_testing.unsqueeze_(1)
+    labels_testing = labels_encoded[train_idx:]
 
 # calculate number of minibatches
 # per epoch variables
@@ -124,12 +118,12 @@ for epoch in range(epochs):  # loop over the dataset multiple times
         if i % print_freq == (print_freq-1):
             print('[%d, %5d, %d] loss: %.5f' %
                   (epoch + 1, i + 1, (i*b), running_loss / n)) # average loss in epoch
-    if do_validation:
+    if args.validate:
         net.eval() # set model into evaluation mode
         outputs = net(Variable(inputs_testing))
         outputs_labels = outputs.max(1)[1].data.numpy().ravel()
         print("Validation Accuracy: %.2f"%accuracy_score(labels_testing, outputs_labels))
-        net.train()
+        net.train() # reset to training mode
 print('Finished Training')
 
 # Prediction
@@ -139,9 +133,9 @@ outputs_labels = outputs.max(1)[1].data.numpy().ravel()
 print(outputs_labels.shape)
 
 yhat = le.inverse_transform(outputs_labels)
-print(yhat)
 y_t = le.inverse_transform(labels_testing)
-print(y_t)
+print(sorted([x for x in zip(yhat,y_t)]))
 print(accuracy_score(y_t, yhat))
 print(confusion_matrix(y_t, yhat))
-torch.save(net.state_dict(), model_save_path)
+if args.save_model:
+    torch.save(net.state_dict(), model_save_path)
