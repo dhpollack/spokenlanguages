@@ -5,10 +5,11 @@ class Net(nn.Module):
     def __init__(self, num_targets):
         super(Net, self).__init__()
         self.features_out_conv = 22848 # dummy value
-        self.conv1 = nn.Conv2d(1, 6, 6)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, (2, 6))
-        self.conv3 = nn.Conv2d(16, 16, (3, 6))
+        self.dropout = nn.Dropout(0.3)
+        self.conv1 = nn.Conv2d(1, 4, 6)
+        self.conv2 = nn.Conv2d(4, 12, (2, 6))
+        self.conv3 = nn.Conv2d(12, 16, (3, 6))
         self.fc1 = nn.Linear(self.features_out_conv, 1024)
         self.fc2 = nn.Linear(1024, 256)
         self.fc3 = nn.Linear(256, num_targets)
@@ -18,8 +19,8 @@ class Net(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = self.pool(F.relu(self.conv3(x)))
         x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.dropout(F.relu(self.fc2(x)))
         x = self.fc3(x)
         return x
 

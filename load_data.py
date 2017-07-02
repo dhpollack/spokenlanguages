@@ -23,7 +23,7 @@ def process_audio_files(l, base_dir = "data/train/", N=None, lfilter = None):
             labels.append(label)
     return(sigs, srs, labels)
 
-def get_mel_spectrograms(sigs, srs, wsize = 2**10, verbose = True):
+def get_mel_spectrograms(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
     hsize = wsize//2
     spectrograms = []
     shapes = set()
@@ -33,6 +33,8 @@ def get_mel_spectrograms(sigs, srs, wsize = 2**10, verbose = True):
         spectrograms.append(S_mel)
     min_shape = min(shapes)
     spectrograms = np.array([x[:,:min_shape[1]] for x in spectrograms])
+    if log10:
+        spectrograms = np.log10(spectrograms)
     if verbose:
         win_times = np.unique(1000 * wsize / np.array(srs))
         hop_times = np.unique(1000 * hsize / np.array(srs))
@@ -40,15 +42,23 @@ def get_mel_spectrograms(sigs, srs, wsize = 2**10, verbose = True):
         print('Hop Length: %.2fms'%hop_times)
     return(spectrograms)
 
-def get_chromagrams(sigs, srs, wsize = 2**10):
+def get_chromagrams(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
+    hsize = wsize // 2
     chromagrams = []
     shapes = set()
     for sig, sr in zip(sigs, srs):
-        chroma = librosa.feature.chroma_stft(sig, sr=sr, n_fft=wsize, hop_length=wsize//2, n_chroma=128)
+        chroma = librosa.feature.chroma_stft(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_chroma=128)
         shapes.add(chroma.shape)
         chromagrams.append(chroma)
     min_shape = min(shapes)
     chromagrams = np.array([x[:,:min_shape[1]] for x in chromagrams])
+    if log10:
+        chromagrams = np.log10(chromagrams)
+    if verbose:
+        win_times = np.unique(1000 * wsize / np.array(srs))
+        hop_times = np.unique(1000 * hsize / np.array(srs))
+        print('Window Length: %.2fms'%win_times)
+        print('Hop Length: %.2fms'%hop_times)
     return(chromagrams)
 
 #audio_file_names = load_csv()
