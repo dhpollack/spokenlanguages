@@ -23,12 +23,12 @@ def process_audio_files(l, base_dir = "data/train/", N=None, lfilter = None):
             labels.append(label)
     return(sigs, srs, labels)
 
-def get_mel_spectrograms(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
+def get_mel_spectrograms(sigs, srs, wsize = 2**10, freq_bands = 128, log10 = False, verbose = True):
     hsize = wsize//2
     spectrograms = []
     shapes = set()
     for sig, sr in zip(sigs, srs):
-        S_mel = librosa.feature.melspectrogram(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_mels=128)
+        S_mel = librosa.feature.melspectrogram(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_mels=freq_bands)
         shapes.add(S_mel.shape)
         spectrograms.append(S_mel)
     min_shape = min(shapes)
@@ -42,12 +42,12 @@ def get_mel_spectrograms(sigs, srs, wsize = 2**10, log10 = False, verbose = True
         print('Hop Length: %.2fms'%hop_times)
     return(spectrograms)
 
-def get_chromagrams(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
+def get_chromagrams(sigs, srs, wsize = 2**10, freq_bands = 128, log10 = False, verbose = True):
     hsize = wsize // 2
     chromagrams = []
     shapes = set()
     for sig, sr in zip(sigs, srs):
-        chroma = librosa.feature.chroma_stft(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_chroma=128)
+        chroma = librosa.feature.chroma_stft(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_chroma=freq_bands)
         shapes.add(chroma.shape)
         chromagrams.append(chroma)
     min_shape = min(shapes)
@@ -61,7 +61,9 @@ def get_chromagrams(sigs, srs, wsize = 2**10, log10 = False, verbose = True):
         print('Hop Length: %.2fms'%hop_times)
     return(chromagrams)
 
-def get_grams(use_chromagrams = False, load_grams_from_disk = True, languages = None, use_log10 = True):
+def get_grams(use_chromagrams = False, load_grams_from_disk = True,
+              languages = None, window_size = 2 ** 10, freq_bands = 128,
+              use_log10 = True):
     if load_grams_from_disk:
         if use_chromagrams:
             fp = "output/chromagrams.npz"
@@ -79,13 +81,16 @@ def get_grams(use_chromagrams = False, load_grams_from_disk = True, languages = 
 
         # Create spectrograms or chromagrams
         print("Creating -grams")
-        window_size = 2 ** 10
         if use_chromagrams:
-            chromagrams = get_chromagrams(sigs, srs, wsize = window_size, log10 = use_log10)
+            chromagrams = get_chromagrams(sigs, srs, wsize = window_size,
+                                          freq_bands = freq_bands,
+                                          log10 = use_log10)
             inputs = chromagrams
             print(chromagrams.shape)
         else:
-            mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size, log10 = use_log10)
+            mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size,
+                                                    freq_bands = freq_bands,
+                                                    log10 = use_log10)
             inputs = mel_spectrograms
             print(mel_spectrograms.shape)
     return(inputs, labels)

@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
-import models.cnn as model
+from models.resnet import *
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -19,6 +19,8 @@ parser.add_argument('--epochs', type=int, default=5,
                     help='upper epoch limit')
 parser.add_argument('--batch-size', type=int, default=8, metavar='b',
                     help='batch size')
+parser.add_argument('--freq-bands', type=int, default=128,
+                    help='number of frequency bands to use')
 parser.add_argument('--languages', type=str, nargs='+', default=None,
                     help='languages to filter by')
 parser.add_argument('--seed', type=int, default=1111,
@@ -41,12 +43,15 @@ parser.add_argument('--save-model', action='store_true',
                     help='path to save the final model')
 args = parser.parse_args()
 
+# python test_torch_resnet.py --validate --freq-bands 224 --batch-size 4 --seed 152 --lr 0.001 --epochs 1
+
 # set seed
 torch.manual_seed(args.seed)
 
 # load spectro/chroma -grams
 inputs, labels = get_grams(use_chromagrams = args.use_chromagrams,
                            load_grams_from_disk = args.load_grams,
+                           window_size = 2 ** 11, freq_bands = args.freq_bands,
                            languages = args.languages, use_log10 = True)
 le = LabelEncoder()
 le.fit(labels)
@@ -56,8 +61,9 @@ num_targets = le.classes_.shape[0]
 
 # Create Network
 gtype = "chroma" if args.use_chromagrams else "spectra"
-model_save_path = "output/states/cnn_model_"+gtype+".pt"
-net = model.Net(num_targets)
+model_save_path = "output/states/resnet_model_"+gtype+".pt"
+#net = ResNet(BasicBlock, [2, 2, 0, 2], num_classes=num_targets)
+net = resnetX(pretrained=False, layers=[2, 2, 2, 2], num_classes=num_targets)
 if args.load_model:
     net.load_state_dict(torch.load(model_save_path))
 criterion = nn.CrossEntropyLoss()
@@ -73,17 +79,20 @@ else:
     train_frac = 1.0
 train_idx = int(len(inputs) * train_frac)
 inputs_training = inputs[:train_idx]
-labels_training = labels_encoded[:train_idx]
+inputs_training = np.stack([inputs_training, inputs_training, inputs_training], axis=1)
+#inputs_training = inputs_training.transpose(0,1,3,2)
 inputs_training = torch.from_numpy(inputs_training).float()
-inputs_training.unsqueeze_(1)
+labels_training = labels_encoded[:train_idx]
+print(inputs_training.size())
+
 labels_training = torch.from_numpy(labels_training)
 trainset = TensorDataset(inputs_training, labels_training)
 trainloader = DataLoader(trainset, batch_size=b, shuffle=shuffle_inputs)
-
+print(b)
 if args.validate:
     inputs_testing = inputs[train_idx:]
+    inputs_testing = np.stack([inputs_testing, inputs_testing, inputs_testing], axis=1)
     inputs_testing = torch.from_numpy(inputs_testing).float()
-    inputs_testing.unsqueeze_(1)
     labels_testing = labels_encoded[train_idx:]
 
 # calculate number of minibatches
@@ -127,9 +136,10 @@ for epoch in range(epochs):  # loop over the dataset multiple times
 print('Finished Training')
 
 # Prediction
-net.eval() # set model into evaluation mode
-outputs = net(Variable(inputs_testing))
-outputs_labels = outputs.max(1)[1].data.numpy().ravel()
+if not args.validate:
+    net.eval() # set model into evaluation mode
+    outputs = net(Variable(inputs_testing))
+    outputs_labels = outputs.max(1)[1].data.numpy().ravel()
 print(outputs_labels.shape)
 
 yhat = le.inverse_transform(outputs_labels)
