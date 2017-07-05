@@ -61,9 +61,9 @@ def get_chromagrams(sigs, srs, wsize = 2**10, freq_bands = 128, log10 = False, v
         print('Hop Length: %.2fms'%hop_times)
     return(chromagrams)
 
-def get_grams(use_chromagrams = False, load_grams_from_disk = True,
-              languages = None, window_size = 2 ** 10, freq_bands = 128,
-              use_log10 = True):
+def get_grams(filelist = "data/trainingset.csv", use_chromagrams = False,
+              load_grams_from_disk = True, languages = None,
+              window_size = 2 ** 10, freq_bands = 128, use_log10 = True):
     if load_grams_from_disk:
         if use_chromagrams:
             fp = "output/chromagrams.npz"
@@ -76,7 +76,7 @@ def get_grams(use_chromagrams = False, load_grams_from_disk = True,
         # Loading CSV file
         lfilter_set = set(languages) if languages is not None else None
         print("Loading CSV file")
-        audio_file_names = load_csv()
+        audio_file_names = load_csv(filelist)
         sigs, srs, labels = process_audio_files(audio_file_names, lfilter=lfilter_set)
 
         # Create spectrograms or chromagrams

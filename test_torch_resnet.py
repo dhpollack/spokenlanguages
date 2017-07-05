@@ -129,8 +129,11 @@ for epoch in range(epochs):  # loop over the dataset multiple times
                   (epoch + 1, i + 1, (i*b), running_loss / n)) # average loss in epoch
     if args.validate:
         net.eval() # set model into evaluation mode
-        outputs = net(Variable(inputs_testing))
-        outputs_labels = outputs.max(1)[1].data.numpy().ravel()
+        output = []
+        for t in torch.split(inputs_testing, args.batch_size):
+            output += [net(Variable(t)).data]
+        output = torch.cat(output)
+        outputs_labels = output.max(1)[1].numpy().ravel()
         print("Validation Accuracy: %.2f"%accuracy_score(labels_testing, outputs_labels))
         net.train() # reset to training mode
 print('Finished Training')
@@ -138,8 +141,11 @@ print('Finished Training')
 # Prediction
 if not args.validate:
     net.eval() # set model into evaluation mode
-    outputs = net(Variable(inputs_testing))
-    outputs_labels = outputs.max(1)[1].data.numpy().ravel()
+    output = []
+    for t in torch.split(inputs_testing, args.batch_size):
+        output += [net(Variable(t)).data]
+    output = torch.cat(output)
+    outputs_labels = output.max(1)[1].numpy().ravel()
 print(outputs_labels.shape)
 
 yhat = le.inverse_transform(outputs_labels)
