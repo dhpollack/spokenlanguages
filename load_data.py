@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import librosa
 
 def load_csv(filelist = "data/trainingset.csv"):
@@ -8,14 +9,22 @@ def load_csv(filelist = "data/trainingset.csv"):
             fp, lab = line.strip().split(",")
             l.append([fp, lab])
     return(l)
-def process_audio_files(l, base_dir = "data/train/", N=None, lfilter = None):
+
+def get_audio_paths(fp):
+    dn = os.path.dirname(fp)
+    bn = os.path.basename(fp)
+    return(os.path.join(dn, bn.split('.')[0]))
+
+def process_audio_files(filelist = "data/trainingset.csv", N=None, lfilter = None):
+    basedir = get_audio_paths(filelist)
     sigs = []
     srs = []
     labels = []
+    l = load_csv(filelist)
     l = l[:N] if l is not None else l
     for fname, label in l:
         if (lfilter == None) or (label in lfilter):
-            filename = base_dir + fname
+            filename = os.path.join(basedir, fname)
             sig, sr = librosa.core.load(filename, sr=None)
             sig = np.trim_zeros(sig)
             sigs.append(sig)
@@ -23,79 +32,53 @@ def process_audio_files(l, base_dir = "data/train/", N=None, lfilter = None):
             labels.append(label)
     return(sigs, srs, labels)
 
-def get_mel_spectrograms(sigs, srs, wsize = 2**10, freq_bands = 128, log10 = False, verbose = True):
+def create_grams(sigs, srs, base_sr = 44100, wsize = 2**10, freq_bands = 128,
+                 gram_type = "spectrograms", verbose = True):
     hsize = wsize//2
-    spectrograms = []
+    grams = []
     shapes = set()
+    if gram_type == "spectrograms":
+        kargs = {"n_mels":freq_bands}
+        gram_func = librosa.feature.melspectrogram
+    elif gram_type == "chromagrams":
+        kargs = {"n_chroma":freq_bands}
+        gram_func = librosa.feature.chroma_stft
     for sig, sr in zip(sigs, srs):
-        S_mel = librosa.feature.melspectrogram(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_mels=freq_bands)
-        shapes.add(S_mel.shape)
-        spectrograms.append(S_mel)
-    min_shape = min(shapes)
-    spectrograms = np.array([x[:,:min_shape[1]] for x in spectrograms])
-    if log10:
-        spectrograms = np.log10(spectrograms)
-    if verbose:
-        win_times = np.unique(1000 * wsize / np.array(srs))
-        hop_times = np.unique(1000 * hsize / np.array(srs))
-        print('Window Length: %.2fms'%win_times)
-        print('Hop Length: %.2fms'%hop_times)
-    return(spectrograms)
-
-def get_chromagrams(sigs, srs, wsize = 2**10, freq_bands = 128, log10 = False, verbose = True):
-    hsize = wsize // 2
-    chromagrams = []
-    shapes = set()
-    for sig, sr in zip(sigs, srs):
-        chroma = librosa.feature.chroma_stft(sig, sr=sr, n_fft=wsize, hop_length=hsize, n_chroma=freq_bands)
-        shapes.add(chroma.shape)
-        chromagrams.append(chroma)
-    min_shape = min(shapes)
-    chromagrams = np.array([x[:,:min_shape[1]] for x in chromagrams])
-    if log10:
-        chromagrams = np.log10(chromagrams)
-    if verbose:
-        win_times = np.unique(1000 * wsize / np.array(srs))
-        hop_times = np.unique(1000 * hsize / np.array(srs))
-        print('Window Length: %.2fms'%win_times)
-        print('Hop Length: %.2fms'%hop_times)
-    return(chromagrams)
-
-def get_grams(filelist = "data/trainingset.csv", use_chromagrams = False,
-              load_grams_from_disk = True, languages = None,
-              window_size = 2 ** 10, freq_bands = 128, use_log10 = True):
-    if load_grams_from_disk:
-        if use_chromagrams:
-            fp = "output/chromagrams.npz"
+        if sr == base_sr:
+            gram = gram_func(sig, sr=sr, n_fft=wsize, hop_length=hsize, **kargs)
+            shapes.add(gram.shape)
+            grams.append(gram)
         else:
-            fp = "output/melspectrograms.npz"
-        with np.load(fp) as data:
+            print(sr)
+    min_shape = min(shapes)
+    grams = np.array([x[:,:min_shape[1]] for x in grams])
+    grams = np.log10(grams)
+    if verbose:
+        win_times = 1000 * wsize / base_sr
+        hop_times = 1000 * hsize / base_sr
+        print('Window Length: %.2fms'%win_times)
+        print('Hop Length: %.2fms'%hop_times)
+    return(grams)
+
+def get_grams(filelist = "data/trainingset.csv", N = None, languages = None,
+              use_chromagrams = False, grams_path = None,
+              base_sr = 44100, window_size = 2 ** 10, freq_bands = 128):
+    if grams_path is not None:
+        with np.load(grams_path) as data:
             inputs = data["grams"]
             labels = data["labels"]
     else:
         # Loading CSV file
         lfilter_set = set(languages) if languages is not None else None
         print("Loading CSV file")
-        audio_file_names = load_csv(filelist)
-        sigs, srs, labels = process_audio_files(audio_file_names, lfilter=lfilter_set)
-
+        sigs, srs, labels = process_audio_files(filelist, N=N, lfilter=lfilter_set)
         # Create spectrograms or chromagrams
         print("Creating -grams")
         if use_chromagrams:
-            chromagrams = get_chromagrams(sigs, srs, wsize = window_size,
-                                          freq_bands = freq_bands,
-                                          log10 = use_log10)
-            inputs = chromagrams
-            print(chromagrams.shape)
+            gram_type = "chromagrams"
         else:
-            mel_spectrograms = get_mel_spectrograms(sigs, srs, wsize = window_size,
-                                                    freq_bands = freq_bands,
-                                                    log10 = use_log10)
-            inputs = mel_spectrograms
-            print(mel_spectrograms.shape)
+            gram_type = "spectrograms"
+        inputs = create_grams(sigs, srs, gram_type = gram_type, base_sr = base_sr,
+                              wsize = window_size, freq_bands = freq_bands)
+    print(inputs.shape)
     return(inputs, labels)
-
-#audio_file_names = load_csv()
-#spectrograms, sample_rates, labels = get_mel_spectrograms(audio_file_names)
-#print(len(audio_file_names))
-#print(spectrograms.shape)

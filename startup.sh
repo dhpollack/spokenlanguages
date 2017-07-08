@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apt-get update
-apt-get install -y gcc make bzip2 ffmpeg unzip git wget
+apt-get install -y gcc make bzip2 ffmpeg unzip git wget dos2unix
 
 UNAME="david"
 USRDIR="/home/"$UNAME
@@ -11,6 +11,9 @@ if [ -f $USRDIR/.setup_complete ]; then
     echo "Already Setup!"
 else
     git clone https://github.com/dhpollack/spokenlanguages.git $USRDIR$SPKDIR
+    dos2unix $USRDIR$SPKDIR/data/trainingset.csv
+    dos2unix $USRDIR$SPKDIR/data/testingset.csv
+    sed -e 's/$/,English/' -i $USRDIR$SPKDIR/data/testingset.csv
     mkdir -p $USRDIR$SPKDIR/data/train $USRDIR$SPKDIR/data/test $USRDIR$SPKDIR/models $USRDIR$SPKDIR/output/states
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S1.zip -O $USRDIR$SPKDIR/data/S1.zip
     wget http://www.topcoder.com/contest/problem/SpokenLanguages/S2.zip -O $USRDIR$SPKDIR/data/S2.zip
@@ -26,8 +29,8 @@ else
     #conda install pytorch torchvision cuda80 -c soumith
     conda install -y scipy scikit-learn jupyter matplotlib h5py
     pip install librosa
-    unzip $USRDIR$SPKDIR/data/S1.zip -d $USRDIR$SPKDIR/data/train
-    unzip $USRDIR$SPKDIR/data/S2.zip -d $USRDIR$SPKDIR/data/test
+    unzip $USRDIR$SPKDIR/data/S1.zip -d $USRDIR$SPKDIR/data/trainingset
+    unzip $USRDIR$SPKDIR/data/S2.zip -d $USRDIR$SPKDIR/data/testingtest
     rm $USRDIR$SPKDIR/data/S*.zip
     touch $USRDIR/.setup_complete
     chown -Rf $UNAME:$UNAME $USRDIR

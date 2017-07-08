@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Net(nn.Module):
-    def __init__(self, num_targets):
+    def __init__(self, num_classes):
         super(Net, self).__init__()
-        self.features_out_conv = 22848 # dummy value
+        self.features_out_conv = 20384 # dummy value
         self.pool = nn.MaxPool2d(2, 2)
         self.dropout = nn.Dropout(0.3)
         self.conv1 = nn.Conv2d(1, 4, 6)
@@ -12,7 +12,7 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(12, 16, (3, 6))
         self.fc1 = nn.Linear(self.features_out_conv, 1024)
         self.fc2 = nn.Linear(1024, 256)
-        self.fc3 = nn.Linear(256, num_targets)
+        self.fc3 = nn.Linear(256, num_classes)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))

@@ -171,13 +171,11 @@ def resnet34(pretrained=False, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
     return model
 
-def resnetX(pretrained=False, layers=[2, 2, 2, 2], **kwargs):
+def resnetX(layers=[2, 2, 2, 2], **kwargs):
     """Constructs a ResNet-X model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet(BasicBlock, layers, **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
     return model
