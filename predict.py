@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 from load_data import *
+from sputils import *
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -62,14 +63,11 @@ inputs, labels = get_grams(use_chromagrams = args.use_chromagrams, N = None,
                            grams_path = args.grams_path, languages = args.languages,
                            window_size = args.window_size, freq_bands = args.freq_bands)
 # encode labels
-dummy_labels = ["English", "Spanish", "Italian", "French", "German"]
-dummy_labels = np.array(dummy_labels)
 le = LabelEncoder()
-le.fit(dummy_labels)
-labels_encoded = le.transform(labels)
+le.fit(spconfig.lang_classes)
 num_targets = le.classes_.shape[0]
+labels_encoded = le.transform(labels)
 print(le.classes_)
-#num_targets = 5
 
 # Create Network
 if args.model == "cnn":

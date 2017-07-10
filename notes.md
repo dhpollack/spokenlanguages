@@ -29,3 +29,19 @@ gcloud compute instances delete --zone "us-west1-a" spokenlanguages-1
 ## Locations
 
 /var/log/syslog - output of startup script
+
+## Calculate Convolutional layer output dimensions
+
+```python
+def conv_dim(vol, f, s, p, k):
+    return((k, np.floor((vol[1]-f[0]+2*p[0])/s[0] + 1), np.floor((vol[2]-f[1]+2*p[1])/s[1] + 1)))
+
+def pool_dim(vol, s):
+    return((vol[0], np.floor(vol[1]/s[0]), np.floor(vol[2]/s[1])))
+```
+
+## Concepts
+
+- Short-time Fourier Transform (spectrograms), Wavelet Transform (scaleogram)
+- Resnet, LSTM, GRU, etc
+- Connectionist Temporal Classification

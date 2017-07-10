@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 from load_data import *
+from sputils import *
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -61,16 +62,16 @@ inputs, labels = get_grams(use_chromagrams = args.use_chromagrams, N = None,
                            grams_path = args.grams_path, languages = args.languages,
                            window_size = args.window_size, freq_bands = args.freq_bands)
 le = LabelEncoder()
-le.fit(labels)
-labels_encoded = le.transform(labels)
+le.fit(spconfig.lang_classes)
 num_targets = le.classes_.shape[0]
+labels_encoded = le.transform(labels)
 
 
 # Create Network
 gtype = "chromagrams" if args.use_chromagrams else "spectrograms"
 if args.model == "cnn":
     nn_builder = cnn.Net
-    nnargs = {}
+    nnargs = {"input_dim": (1,) + inputs.shape[1:]}
 elif args.model == "resnet":
     nn_builder = resnet.resnetX
     nnargs = {}
