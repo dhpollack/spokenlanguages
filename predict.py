@@ -61,7 +61,11 @@ torch.manual_seed(args.seed)
 gtype = "chromagrams" if args.use_chromagrams else "spectrograms"
 inputs, labels = get_grams(use_chromagrams = args.use_chromagrams, N = None,
                            grams_path = args.grams_path, languages = args.languages,
-                           window_size = args.window_size, freq_bands = args.freq_bands)
+                           window_size = args.window_size, freq_bands = args.freq_bands,
+                           filelist = args.file_list)
+inputs = inputs[:,:,:427]
+print(inputs.shape)
+
 # encode labels
 le = LabelEncoder()
 le.fit(spconfig.lang_classes)
@@ -89,10 +93,21 @@ print(net)
 
 # make predictions in batches
 output = []
-for t in torch.split(torch.Tensor(inputs), args.batch_size):
-    output += [net(transform(t, args.model)).data]
+inputs = torch.from_numpy(inputs).float()
+labels_encoded = torch.from_numpy(labels_encoded[:inputs.size(0)])
+print(labels_encoded.size())
+
+trainset = TensorDataset(inputs, labels_encoded)
+trainloader = DataLoader(trainset, batch_size=args.batch_size, shuffle=False)
+
+for i, (minibatch, l) in enumerate(trainloader):
+    output += [net(transform(minibatch, args.model)).data]
 output = torch.cat(output)
+#output_numpy = nn.functional.softmax(Variable(output)).data.numpy()
+#np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+#print(output_numpy)
+print(output.max(1)[1].numpy().ravel())
 yhat = le.inverse_transform(output.max(1)[1].numpy().ravel())
-#y_t  = le.inverse_transform(labels_encoded)
-#print(confusion_matrix(y_t, yhat))
-print(confusion_matrix(yhat, yhat))
+#print([(act, pred) for act, pred in zip(labels, yhat)])
+y_t  = le.inverse_transform(labels_encoded.numpy().ravel())
+print(confusion_matrix(y_t, yhat))

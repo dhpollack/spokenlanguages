@@ -33,11 +33,11 @@ def process_audio_files(filelist = "data/trainingset.csv", N=None, lfilter = Non
     return(sigs, srs, labels)
 
 def create_grams(sigs, srs, base_sr = 44100, wsize = 2**10, freq_bands = 128,
-                 gram_type = "spectrograms", verbose = True):
+                 gram_type = "spectrograms", normalize = True, verbose = True):
     hsize = wsize//2
     grams = []
     shapes = set()
-    base_sr = base_sr if np.unique(srs).shape[0] > 1 else np.unique(srs)[0] 
+    base_sr = base_sr if np.unique(srs).shape[0] > 1 else np.unique(srs)[0]
     if gram_type == "spectrograms":
         kargs = {"n_mels":freq_bands}
         gram_func = librosa.feature.melspectrogram
@@ -47,7 +47,7 @@ def create_grams(sigs, srs, base_sr = 44100, wsize = 2**10, freq_bands = 128,
     for sig, sr in zip(sigs, srs):
         if sr == base_sr:
             gram = gram_func(sig, sr=sr, n_fft=wsize, hop_length=hsize, **kargs)
-            if True: # normalization
+            if normalize: # normalization
                 gram -= gram.mean()
                 gram /= np.abs(gram).max()
             shapes.add(gram.shape)

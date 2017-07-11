@@ -54,6 +54,17 @@ def transform(tensor, model = "cnn"):
     elif model == "resnet":
         return(Variable(torch.stack([tensor, tensor, tensor], dim=1)))
 
+def lr_scheduler(optimizer, epoch, step_size=7, gamma=0.1, init_lr=0.001):
+    """Decay learning rate by a factor of 0.1 every lr_decay_epoch epochs."""
+    lr = init_lr * (gamma**(epoch // step_size))
+
+    if epoch % step_size == 0:
+        print('LR is set to {}'.format(lr))
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+    return optimizer
 # set seed
 torch.manual_seed(args.seed)
 
@@ -95,9 +106,6 @@ else:
     train_frac = 1.0
 train_idx = int(len(inputs) * train_frac)
 inputs_training = torch.from_numpy(inputs[:train_idx]).float()
-#inputs_training = np.stack([inputs_training, inputs_training, inputs_training], axis=1)
-#inputs_training = inputs_training.transpose(0,1,3,2)
-#inputs_training = torch.from_numpy(inputs_training).float()
 labels_training = labels_encoded[:train_idx]
 
 labels_training = torch.from_numpy(labels_training)
@@ -120,6 +128,7 @@ print("Print Frequency (minibatches):", print_freq)
 net.train() # set model into training mode
 for epoch in range(epochs):  # loop over the dataset multiple times
     # reset vars each epoch
+    optimizer = lr_scheduler(optimizer, epoch, init_lr=args.lr)
     running_loss = 0.0
     n = 0
     for i, (minibatch, l) in enumerate(trainloader):

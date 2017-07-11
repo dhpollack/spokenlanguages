@@ -28,7 +28,7 @@ else
     conda install -y pytorch torchvision -c soumith
     #conda install pytorch torchvision cuda80 -c soumith
     conda install -y scipy scikit-learn jupyter matplotlib h5py
-    pip install librosa
+    pip install librosa pydub
     unzip $USRDIR$SPKDIR/data/S1.zip -d $USRDIR$SPKDIR/data/trainingset
     unzip $USRDIR$SPKDIR/data/S2.zip -d $USRDIR$SPKDIR/data/testingtest
     rm $USRDIR$SPKDIR/data/S*.zip

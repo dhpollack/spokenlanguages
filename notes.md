@@ -1,18 +1,25 @@
 ## Initial creation
 ```sh
-gcloud compute --project "dhpollack944" instances create "spokenlanguages-1" --zone "us-west1-a" --machine-type "n1-highcpu-8" --subnet "default" --no-restart-on-failure --maintenance-policy "TERMINATE" --preemptible --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --image "debian-8-jessie-v20170523" --image-project "debian-cloud" --boot-disk-size "30" --boot-disk-type "pd-standard" --boot-disk-device-name "spokenlanguages-1" --metadata-from-file startup-script=startup.sh
+gcloud compute --project "dhpollack944" instances create "spokenlanguages-1" --zone "us-west1-a" --machine-type "n1-standard-8" --subnet "default" --no-restart-on-failure --maintenance-policy "TERMINATE" --preemptible --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --image "debian-8-jessie-v20170523" --image-project "debian-cloud" --boot-disk-size "30" --boot-disk-type "pd-standard" --boot-disk-device-name "spokenlanguages-1" --metadata-from-file startup-script=startup.sh
 ```
 
 ## Create Image
 ```sh
 gcloud compute instances stop --zone "us-west1-a" spokenlanguages-1
 
-gcloud compute images create slv2 --source-disk spokenlanguages-1 --source-disk-zone us-west1-a --family debian-8
+gcloud compute images create slv --source-disk spokenlanguages-1 --source-disk-zone us-west1-a --family debian-8
+
+gcloud compute disks create spokenlanguages-1 --source-snapshot ufa2i2i7gdt5 --zone "us-west1-a"
+
+gcloud compute disks snapshot spokenlanguages-1 --snapshot-names spl-snap-1 --zone "us-west1-a"
 ```
 
-## Create from image
+## Create from image or boot from snapshot
 ```sh
 gcloud compute --project "dhpollack944" instances create "spokenlanguages-1" --zone "us-west1-a" --machine-type "n1-standard-8" --subnet "default" --no-restart-on-failure --maintenance-policy "TERMINATE" --preemptible --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --image "slv2" --image-project "dhpollack944" --boot-disk-size "30" --boot-disk-type "pd-standard" --boot-disk-device-name "spokenlanguages-1" --metadata-from-file startup-script=startup.sh
+
+gcloud compute --project "dhpollack944" instances create "spokenlanguages-1" --zone "us-west1-a" --machine-type "n1-standard-8" --subnet "default" --no-restart-on-failure --maintenance-policy "TERMINATE" --preemptible --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --disk name=spokenlanguages-1,device-name=spokenlanguages-1,mode=rw,boot=yes
+
 ```
 
 ## Start/Stop/SSH/Delete
