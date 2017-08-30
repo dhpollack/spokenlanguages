@@ -15,21 +15,26 @@ def get_audio_paths(fp):
     bn = os.path.basename(fp)
     return(os.path.join(dn, bn.split('.')[0]))
 
-def process_audio_files(filelist = "data/trainingset.csv", N=None, lfilter = None):
+def process_audio_files(filelist = "data/trainingset.csv", N=None,
+                        base_sr = 44100, lfilter = None):
     basedir = get_audio_paths(filelist)
     sigs = []
     srs = []
     labels = []
     l = load_csv(filelist)
     l = l[:N] if l is not None else l
+    files = []
     for fname, label in l:
         if (lfilter == None) or (label in lfilter):
             filename = os.path.join(basedir, fname)
             sig, sr = librosa.core.load(filename, sr=None)
-            sig = np.trim_zeros(sig)
-            sigs.append(sig)
-            srs.append(sr)
-            labels.append(label)
+            if base_sr == None or sr == base_sr:
+                sig = np.trim_zeros(sig)
+                sigs.append(sig)
+                srs.append(sr)
+                labels.append(label)
+                files.append((fname,label))
+    np.savetxt("/tmp/filelist.csv", delimiter=",", fmt="%s")
     return(sigs, srs, labels)
 
 def create_grams(sigs, srs, base_sr = 44100, wsize = 2**10, freq_bands = 128,
@@ -75,8 +80,10 @@ def get_grams(filelist = "data/trainingset.csv", N = None, languages = None,
     else:
         # Loading CSV file
         lfilter_set = set(languages) if languages is not None else None
-        print("Loading CSV file")
-        sigs, srs, labels = process_audio_files(filelist, N=N, lfilter=lfilter_set)
+        print("Loading CSV file + Audio Files")
+        sigs, srs, labels = process_audio_files(filelist, N=N,
+                                                base_sr = base_sr,
+                                                lfilter=lfilter_set)
         # Create spectrograms or chromagrams
         print("Creating -grams")
         if use_chromagrams:
