@@ -105,12 +105,16 @@ ENV/
 
 # output folder
 output/
+data/voxforge/
 
 # data files
 *.mp3
 *.zip
 *.h5
 *.npz
+*.wav
+*.flac
+*.tgz
 
 # nano files
 *.swp
