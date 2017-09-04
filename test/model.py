@@ -157,7 +157,7 @@ class Test_Resnet(unittest.TestCase):
                     correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
                 valid_losses.append((running_validation_loss, correct / len(vx)))
                 print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
-            break
+            if i == 11: break
 
 if __name__ == '__main__':
     unittest.main()

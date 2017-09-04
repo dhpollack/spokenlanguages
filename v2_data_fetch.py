@@ -45,11 +45,12 @@ class VOXFORGE(data.Dataset):
 
     def __init__(self, basedir, transform=None, target_transform=None,
                  langs=["de", "en"], ratios=[0.7, 0.1, 0.2], split="train",
-                 label_type="lang", download=False, num_zips=10, randomize=False,
-                 dev_mode=False):
+                 label_type="lang", use_cache=False, download=False, num_zips=10,
+                 randomize=False, dev_mode=False):
         _make_dir_iff(basedir)
         self.basedir = basedir
         self.rand = randomize
+        self.use_cache = use_cache
         self.dev_mode = dev_mode
         self.num_zips = num_zips
         self.langs = langs
@@ -70,6 +71,9 @@ class VOXFORGE(data.Dataset):
 
         audiomanifest = [os.path.join(audiodir, fp) for fp in os.listdir(audiodir)]
 
+        if randomize:
+            random.shuffle(audiomanifest)
+
         if label_type == "lang":
             audiolabels = [os.path.basename(l).split("__", 1)[0] for l in audiomanifest]
         else:
@@ -89,6 +93,7 @@ class VOXFORGE(data.Dataset):
                      range(split_pts[1], num_files)]
         self.splits = {spn: spi for spn, spi in zip(self.SPLITS, split_pts)}
         self.data, self.labels = audiomanifest, audiolabels
+        self.cache = {}
 
     def __getitem__(self, index):
         """
@@ -98,15 +103,23 @@ class VOXFORGE(data.Dataset):
         Returns:
             tuple: (audio, label) where target is index of the target class.
         """
-        audio, sr = torchaudio.load(self.data[index], normalization=True)
-        target = self.labels[index]
-        assert sr == 16000
+        audio_path = self.data[index]
+        if self.use_cache and audio_path in self.cache:
+            audio, target = self.cache[audio_path]
+        else:
+            audio, sr = torchaudio.load(self.data[index], normalization=True)
+            target = self.labels[index]
+            assert sr == 16000
 
-        if self.transform is not None:
-            audio = self.transform(audio)
+            if self.transform is not None:
+                audio = self.transform(audio)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+            if self.target_transform is not None:
+                target = self.target_transform(target)
+
+            if self.use_cache:
+                self.cache[audio_path] = (audio, target)
+
 
         return audio, target
 
@@ -115,7 +128,7 @@ class VOXFORGE(data.Dataset):
 
     def set_split(self, s):
         self.split = s
-    
+
     def find_max_len(self):
         self.maxlen = 0
         for fp in self.data:
