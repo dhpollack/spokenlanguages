@@ -1,4 +1,5 @@
 import unittest
+import time
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -8,6 +9,12 @@ import torchaudio.transforms as tat
 import torchvision.transforms as tvt
 import spl_transforms
 from v2_data_fetch import *
+
+def print_running_time(start):
+    elapsed = time.time()-start
+    print("time (s): {:0.2f}s".format(elapsed))
+    return(elapsed)
+
 
 class Test_Squeezenet(unittest.TestCase):
 
@@ -104,7 +111,7 @@ class Test_Resnet(unittest.TestCase):
 
     def test1(self):
         # Data
-        vx = VOXFORGE(self.bdir, label_type="lang")
+        vx = VOXFORGE(self.bdir, label_type="lang", use_cache=True)
         #vx.find_max_len()
         vx.maxlen = 150000
         T = tat.Compose([
@@ -145,6 +152,7 @@ class Test_Resnet(unittest.TestCase):
             train_losses.append(loss.data[0])
             print(loss.data[0])
             if i % 5 == 0:
+                start = time.time()
                 model.eval()
                 vx.set_split("valid")
                 running_validation_loss = 0
@@ -155,9 +163,11 @@ class Test_Resnet(unittest.TestCase):
                     loss_valid = criterion(out_valid, tgts_valid)
                     running_validation_loss += loss_valid.data[0]
                     correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
+                print_running_time(start)
                 valid_losses.append((running_validation_loss, correct / len(vx)))
                 print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
             if i == 11: break
+            vx.set_split("train")
 
 if __name__ == '__main__':
     unittest.main()

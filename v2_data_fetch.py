@@ -103,12 +103,13 @@ class VOXFORGE(data.Dataset):
         Returns:
             tuple: (audio, label) where target is index of the target class.
         """
-        audio_path = self.data[index]
+        idx_split = self.splits[self.split][index]
+        audio_path = self.data[idx_split]
         if self.use_cache and audio_path in self.cache:
             audio, target = self.cache[audio_path]
         else:
-            audio, sr = torchaudio.load(self.data[index], normalization=True)
-            target = self.labels[index]
+            audio, sr = torchaudio.load(audio_path, normalization=True)
+            target = self.labels[idx_split]
             assert sr == 16000
 
             if self.transform is not None:
