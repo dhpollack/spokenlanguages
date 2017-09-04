@@ -105,12 +105,12 @@ class Test_Resnet(unittest.TestCase):
     def test1(self):
         # Data
         vx = VOXFORGE(self.bdir, label_type="lang")
-        vx.find_max_len()
-        #vx.maxlen = 150000
+        #vx.find_max_len()
+        vx.maxlen = 150000
         T = tat.Compose([
                 tat.PadTrim(vx.maxlen),
-                spl_transforms.MEL(n_mels=224),
-                spl_transforms.BLC2CBL(),
+                tat.MEL(n_mels=224),
+                tat.BLC2CBL(),
                 tvt.ToPILImage(),
                 tvt.Scale((224, 224)),
                 tvt.ToTensor(),
@@ -157,6 +157,7 @@ class Test_Resnet(unittest.TestCase):
                     correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
                 valid_losses.append((running_validation_loss, correct / len(vx)))
                 print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
+            break
 
 if __name__ == '__main__':
     unittest.main()
