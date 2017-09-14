@@ -21,7 +21,7 @@ else
     #wget http://www.topcoder.com/contest/problem/SpokenLanguages/S2.zip -O $USRDIR$SPKDIR/data/S2.zip
     # install python3.6 with miniconda
     wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh
-    chmod 755 /tmp/miniconda3.sh
+    chmod +x /tmp/miniconda3.sh
     /tmp/miniconda3.sh -b -p $USRDIR/miniconda3
     rm /tmp/miniconda3.sh
     source $USRDIR/miniconda3/bin/activate
