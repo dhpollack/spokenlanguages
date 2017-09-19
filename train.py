@@ -56,6 +56,7 @@ def train(epoch):
         optimizer.step()
         train_losses.append(loss.data[0])
         print(loss.data[0])
+        break
         if i % 5 == 0:
             validate(epoch)
         vx.set_split("train")
@@ -80,4 +81,4 @@ train_losses = []
 valid_losses = []
 for epoch in range(epochs):
     train(epoch)
-    model.save_state_dict("output/states/model_resnet34_{}.pt".format(epoch+1))
+    torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
