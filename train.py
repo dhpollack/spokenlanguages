@@ -8,8 +8,11 @@ import torchvision.transforms as tvt
 import spl_transforms
 from loader_voxforge import *
 
+# use_cuda
+use_cuda = torch.cuda.is_available()
+
 # Data
-vx = VOXFORGE("data/voxforge", langs=["de", "en"], label_type="lang")
+vx = VOXFORGE("data/voxforge", langs=["de", "en", "sp"], label_type="lang")
 #vx.find_max_len()
 vx.maxlen = 150000
 T = tat.Compose([
@@ -36,12 +39,15 @@ plist.extend(list(model[1].fc.parameters()))
 #optimizer = torch.optim.SGD(plist, lr=0.0001, momentum=0.9)
 optimizer = torch.optim.Adam(plist, lr=0.0001)
 
-print(vx.splits)
+if use_cuda:
+    model = model.cuda()
 
 def train(epoch):
     vx.set_split("train")
     for i, (mb, tgts) in enumerate(dl):
         model.train()
+        if use_cuda:
+            mb, tgts = mb.cuda(), tgts.cuda()
         mb, tgts = Variable(mb), Variable(tgts)
         model.zero_grad()
         out = model(mb)
@@ -74,3 +80,4 @@ train_losses = []
 valid_losses = []
 for epoch in range(epochs):
     train(epoch)
+    model.save_state_dict("output/states/model_resnet34_{}.pt".format(epoch+1))
