@@ -1,7 +1,7 @@
 import unittest
 import torchaudio.transforms as transforms
 import spl_transforms
-from v2_data_fetch import *
+from loader_voxforge import *
 
 class Test_Voxforge(unittest.TestCase):
     bdir = "data/voxforge"
@@ -64,6 +64,25 @@ class Test_Voxforge(unittest.TestCase):
                     total_valid += l_valid.size(0)
                 print(total_valid)
         print(total_train)
+
+    def test5(self):
+        import numpy as np
+        vx = VOXFORGE(self.bdir, download=False, label_type="prompts",
+                      dev_mode=False)
+        vx.find_max_len()
+        T = transforms.Compose([transforms.PadTrim(vx.maxlen),])
+        TT = spl_transforms.WC()
+        vx.transform = T
+        vx.target_transform = TT
+        print(vx.splits)
+        dl = data.DataLoader(vx, batch_size = 5, collate_fn=basic_collate)
+        max_wc = 0
+        wc_all = []
+        for i, (mb, tgts) in enumerate(dl):
+            sorted(tgts)
+            max_wc = tgts[-1] if tgts[-1] > max_wc else max_wc
+            wc_all.extend(tgts)
+        print(np.histogram(wc_all, bins=20), len(wc_all))
 
 if __name__ == '__main__':
     unittest.main()

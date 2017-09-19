@@ -1,6 +1,7 @@
 from __future__ import print_function
 import torchaudio
 import torch.utils.data as data
+from torch import stack
 import os
 import errno
 import random
@@ -120,7 +121,6 @@ class VOXFORGE(data.Dataset):
 
             if self.use_cache:
                 self.cache[audio_path] = (audio, target)
-
 
         return audio, target
 
@@ -288,3 +288,17 @@ def _make_dir_iff(d):
             pass
         else:
             raise
+
+def basic_collate(batch):
+    """Puts batch of inputs into a tensor and labels into a list
+       Args:
+         batch: (list) [inputs, labels].  In this simple example, I'm just
+            assuming the inputs are tensors and labels are strings
+       Output:
+         minibatch: (Tensor)
+         targets: (list[str])
+    """
+
+    minibatch, targets = zip(*[(a, b) for (a,b) in batch])
+    minibatch = stack(minibatch, dim=0)
+    return minibatch, targets

@@ -102,3 +102,23 @@ class LENC(object):
         """
 
         return self.vocab[s]
+
+class WC(object):
+    """Transform Word Counter.
+    """
+    def __init__(self, exclude_vocab=None):
+        self.exclude_vocab = exclude_vocab
+
+    def __call__(self, s):
+        """
+        TODO add exclusion vocabulary
+
+        Args:
+            s (str): a string
+
+        Returns:
+            s_int (int): integer of the number of words in the string
+
+        """
+
+        return s.strip().count(" ")
