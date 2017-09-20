@@ -1,6 +1,8 @@
 ## Initial creation
 ```sh
 gcloud compute --project "dhpollack944" instances create "spl-1" --zone "us-west1-a" --machine-type "n1-standard-8" --subnet "default" --no-restart-on-failure --maintenance-policy "TERMINATE" --preemptible --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --image "debian-9-stretch-v20170829" --image-project "debian-cloud" --boot-disk-size "100" --boot-disk-type "pd-standard" --boot-disk-device-name "spl-1" --metadata-from-file startup-script=startup.sh
+
+gcloud beta compute --project "dhpollack944" instances create "spl-gpu-1" --zone "us-west1-b" --machine-type "n1-highmem-4" --subnet "default" --maintenance-policy "TERMINATE" --service-account "292078068994-compute@developer.gserviceaccount.com" --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring.write","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --tags "jupyter" --accelerator type=nvidia-tesla-k80,count=1 --min-cpu-platform "Automatic" --image "ubuntu-1604-xenial-v20170815a" --image-project "ubuntu-os-cloud" --boot-disk-size "100" --boot-disk-type "pd-standard" --boot-disk-device-name "spl-gpu-1" --metadata-from-file startup-script=startup.sh
 ```
 
 ## Create Image
@@ -32,6 +34,14 @@ gcloud compute ssh --zone "us-west1-a" --ssh-key-file="/home/david/.ssh/google-c
 
 gcloud compute instances delete --zone "us-west1-a" spokenlanguages-1
 ```
+
+## Install CUDA
+
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo dpkg -i cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+sudo apt-get update && sudo apt-get install cuda
+sudo nvidia-smi -pm 1  # enable persistence mode for faster CUDA start-up
+
 
 ## Locations
 

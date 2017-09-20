@@ -2,7 +2,7 @@ import torch.nn as nn
 import math
 import torchvision.models as model_zoo
 
-def squeezenet(pretrained=False, num_langs=2, **kwargs):
+def squeezenet(pretrained=False, num_langs=5, **kwargs):
 
     conv2d = nn.Conv2d(1, 3, 1) # turn 1 channel into 3 to simulate image
     conv2d.weight.data[0] = 1. # ensure original spectrogram is maintained 
