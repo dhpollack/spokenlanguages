@@ -59,13 +59,15 @@ dl = data.DataLoader(vx, batch_size = args.batch_size, shuffle=True)
 
 # Model and Loss
 model = models.resnet.resnet34(True, num_langs=5)
+if args.load_model is not None:
+    model.load_state_dict(torch.load(args.load_model))
 print(model)
 criterion = nn.CrossEntropyLoss()
 plist = nn.ParameterList()
 if args.train_full_model:
     #plist.extend(list(model[0].parameters()))
     plist.extend(list(model.parameters()))
-    optimizer = torch.optim.SGD(plist, lr=0.0001, momentum=0.9)
+    optimizer = torch.optim.SGD(plist, lr=args.lr, momentum=0.9)
 else:
     plist.extend(list(model[1].fc.parameters()))
     optimizer = torch.optim.Adam(plist, lr=args.lr)
@@ -97,6 +99,8 @@ def validate(epoch):
     running_validation_loss = 0
     correct = 0
     for mb_valid, tgts_valid in dl:
+        if use_cuda:
+            mb_valid, tgts_valid = mb_valid.cuda(), tgts_valid.cuda()
         mb_valid, tgts_valid = Variable(mb_valid), Variable(tgts_valid)
         out_valid = model(mb_valid)
         loss_valid = criterion(out_valid, tgts_valid)
@@ -110,6 +114,7 @@ epochs = args.epochs
 train_losses = []
 valid_losses = []
 for epoch in range(epochs):
+    print("epoch {}".format(epoch + 1))
     train(epoch)
     if args.save_model:
         torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
