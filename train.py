@@ -22,6 +22,10 @@ parser.add_argument('--languages', type=str, nargs='+', default=["de", "en", "es
                     help='languages to filter by')
 parser.add_argument('--data-path', type=str, default="data/voxforge",
                     help='data path')
+parser.add_argument('--use-cache', action='store_true',
+                    help='use cache in the dataloader')
+parser.add_argument('--num-workers', type=int, default=0,
+                    help='number of workers for data loader')
 parser.add_argument('--validate', action='store_true',
                     help='do out-of-bag validation')
 parser.add_argument('--log-interval', type=int, default=5,
@@ -55,7 +59,8 @@ T = tat.Compose([
 TT = spl_transforms.LENC(vx.LABELS)
 vx.transform = T
 vx.target_transform = TT
-dl = data.DataLoader(vx, batch_size = args.batch_size, shuffle=True)
+dl = data.DataLoader(vx, batch_size=args.batch_size,
+                     num_workers=args.num_workers, shuffle=True)
 
 # Model and Loss
 model = models.resnet.resnet34(True, num_langs=5)
@@ -91,6 +96,8 @@ def train(epoch):
         print(loss.data[0])
         if i % args.log_interval == 0:
             validate(epoch)
+            if args.save_model:
+                torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
         vx.set_split("train")
 
 def validate(epoch):

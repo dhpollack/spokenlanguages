@@ -45,8 +45,8 @@ class VOXFORGE(data.Dataset):
     random.seed(12345)
 
     def __init__(self, basedir, transform=None, target_transform=None,
-                 langs=["de", "en"], ratios=[0.7, 0.1, 0.2], split="train",
-                 label_type="lang", use_cache=False, download=False, num_zips=10,
+                 langs=["de", "en"], label_type="lang", download=False, num_zips=10,
+                 ratios=[0.7, 0.1, 0.2], split="train", use_cache=False,
                  randomize=False, dev_mode=False):
         _make_dir_iff(basedir)
         self.basedir = basedir
