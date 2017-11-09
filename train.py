@@ -30,6 +30,8 @@ parser.add_argument('--validate', action='store_true',
                     help='do out-of-bag validation')
 parser.add_argument('--log-interval', type=int, default=5,
                     help='reports per epoch')
+parser.add_argument('--chkpt-interval', type=int, default=10,
+                    help='how often to save checkpoints')
 parser.add_argument('--load-model', type=str, default=None,
                     help='path of model to load')
 parser.add_argument('--save-model', action='store_true',
@@ -96,8 +98,6 @@ def train(epoch):
         print(loss.data[0])
         if i % args.log_interval == 0:
             validate(epoch)
-            if args.save_model:
-                torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
         vx.set_split("train")
 
 def validate(epoch):
@@ -124,4 +124,5 @@ for epoch in range(epochs):
     print("epoch {}".format(epoch + 1))
     train(epoch)
     if args.save_model:
-        torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
+        if epoch % args.chkpt_interval == 0 or epoch+1 == epochs:
+            torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
