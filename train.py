@@ -69,14 +69,8 @@ def validate(epoch):
     print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
 
 parser = argparse.ArgumentParser(description='PyTorch Language ID Classifier Trainer')
-parser.add_argument('--lr', type=float, default=0.0001,
-                    help='initial learning rate')
-parser.add_argument('--epochs', type=int, default=10,
-                    help='upper epoch limit')
 parser.add_argument('--batch-size', type=int, default=100, metavar='b',
                     help='batch size')
-parser.add_argument('--freq-bands', type=int, default=224,
-                    help='number of frequency bands to use')
 parser.add_argument('--languages', type=str, nargs='+', default=["de", "en", "es"],
                     help='languages to filter by')
 parser.add_argument('--data-path', type=str, default="data/voxforge",
@@ -97,8 +91,6 @@ parser.add_argument('--load-model', type=str, default=None,
                     help='path of model to load')
 parser.add_argument('--save-model', action='store_true',
                     help='path to save the final model')
-parser.add_argument('--train-full-model', action='store_true',
-                    help='train full model vs. final layer')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed')
 args = parser.parse_args()
