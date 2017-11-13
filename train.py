@@ -17,13 +17,21 @@ def create_optimizer(optim, params, kwargs):
 
 def get_optimizer(epoch):
     grenz = 0
-    for k, v in cfg_train["epochs"]:
+    for i, (k, v) in enumerate(cfg_train["epochs"]):
         grenz += v
-        if epoch < grenz or epoch == 0:
+        if epoch == 0:
             print(k, epoch, grenz)
             opt = cfg_train[k]["optimizer"]
             params = cfg_train[k]["params"]
             kwargs = cfg_train[k]["optim_kwargs"]
+            print("Using new optimizer: {} with args {}".format(opt, kwargs))
+            return create_optimizer(opt, params, kwargs)
+        elif epoch == grenz:
+            print(k, epoch, grenz)
+            k_next, _ = cfg_train["epochs"][i+1]
+            opt = cfg_train[k_next]["optimizer"]
+            params = cfg_train[k_next]["params"]
+            kwargs = cfg_train[k_next]["optim_kwargs"]
             print("Using new optimizer: {} with args {}".format(opt, kwargs))
             return create_optimizer(opt, params, kwargs)
         else:
