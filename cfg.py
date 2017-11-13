@@ -65,7 +65,7 @@ TRAINING = {
             "params": MODELS["resnet34"]["model"][1].fc.parameters(),
             "optim_kwargs": {"lr": 0.0001,},
         },
-        "model": {
+        "full_model": {
             "optimizer": torch.optim.SGD,
             "params": MODELS["resnet34"]["model"].parameters(),
             "optim_kwargs": {"lr": 0.0001, "momentum": 0.9,},

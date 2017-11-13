@@ -12,21 +12,27 @@ import cfg
 import csv
 
 def create_optimizer(optim, params, kwargs):
-    return optim(nn.ParameterList(list(params)), **kwargs)
+    plist = nn.ParameterList(list(params))
+    return optim(plist, **kwargs)
 
 def get_optimizer(epoch):
     grenz = 0
     for k, v in cfg_train["epochs"]:
         grenz += v
-        if epoch == grenz:
+        if epoch < grenz or epoch == 0:
+            print(k, epoch, grenz)
             opt = cfg_train[k]["optimizer"]
             params = cfg_train[k]["params"]
             kwargs = cfg_train[k]["optim_kwargs"]
-            return create_optimizer(opt, params, **kwargs)
+            print("Using new optimizer: {} with args {}".format(opt, kwargs))
+            return create_optimizer(opt, params, kwargs)
+        else:
+            pass
     return optimizer
 
 def train(epoch):
     vx.set_split("train")
+    global optimizer
     optimizer = get_optimizer(epoch)
     epoch_losses = []
     for i, (mb, tgts) in enumerate(dl):
@@ -41,7 +47,7 @@ def train(epoch):
         optimizer.step()
         epoch_losses.append(loss.data[0])
         print(loss.data[0])
-        if i % args.log_interval == 0 and args.validate:
+        if i % args.log_interval == 0 and args.validate and i != 0:
             validate(epoch)
         vx.set_split("train")
     train_losses.append(epoch_losses)
@@ -123,9 +129,7 @@ model = model.cuda() if use_cuda else model
 print(model)
 cfg_train = cfg.TRAINING[args.model_name]
 criterion = cfg_train["criterion"]
-optimizer = create_optimizer(cfg_train["fc_layer"]["optimizer"],
-                             cfg_train["fc_layer"]["params"],
-                             cfg_train["fc_layer"]["optim_kwargs"])
+optimizer = None
 
 # Train
 epochs = sum([v for (k, v) in cfg_train["epochs"]])
@@ -134,9 +138,8 @@ valid_losses = []
 for epoch in range(epochs):
     print("epoch {}".format(epoch + 1))
     train(epoch)
-    if args.save_model:
-        if epoch % args.chkpt_interval == 0 or epoch+1 == epochs:
-            torch.save(model.state_dict(), "output/states/{}_{}.pt".format(args.model_name, epoch+1))
+    if args.save_model and (epoch % args.chkpt_interval == 0 or epoch+1 == epochs):
+        torch.save(model.state_dict(), "output/states/{}_{}.pt".format(args.model_name, epoch+1))
 with open("output/train_losses_{}.csv".format(args.model_name), "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerows(train_losses)
