@@ -2,12 +2,65 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import models.resnet
-import models.squeezenet
+import models
 import torchaudio.transforms as tat
 import torchvision.transforms as tvt
 import spl_transforms
 from loader_voxforge import *
+import cfg
+
+import csv
+
+def create_optimizer(optim, params, kwargs):
+    return optim(nn.ParameterList(list(params)), **kwargs)
+
+def get_optimizer(epoch):
+    grenz = 0
+    for k, v in cfg_train["epochs"]:
+        grenz += v
+        if epoch == grenz:
+            opt = cfg_train[k]["optimizer"]
+            params = cfg_train[k]["params"]
+            kwargs = cfg_train[k]["optim_kwargs"]
+            return create_optimizer(opt, params, **kwargs)
+    return optimizer
+
+def train(epoch):
+    vx.set_split("train")
+    optimizer = get_optimizer(epoch)
+    epoch_losses = []
+    for i, (mb, tgts) in enumerate(dl):
+        model.train()
+        if use_cuda:
+            mb, tgts = mb.cuda(), tgts.cuda()
+        mb, tgts = Variable(mb), Variable(tgts)
+        model.zero_grad()
+        out = model(mb)
+        loss = criterion(out, tgts)
+        loss.backward()
+        optimizer.step()
+        epoch_losses.append(loss.data[0])
+        print(loss.data[0])
+        if i % args.log_interval == 0 and args.validate:
+            validate(epoch)
+        vx.set_split("train")
+    train_losses.append(epoch_losses)
+
+def validate(epoch):
+    model.eval()
+    vx.set_split("valid")
+    running_validation_loss = 0
+    correct = 0
+    for mb_valid, tgts_valid in dl:
+        if use_cuda:
+            mb_valid, tgts_valid = mb_valid.cuda(), tgts_valid.cuda()
+        mb_valid, tgts_valid = Variable(mb_valid), Variable(tgts_valid)
+        out_valid = model(mb_valid)
+        loss_valid = criterion(out_valid, tgts_valid)
+        running_validation_loss += loss_valid.data[0]
+        correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
+    valid_losses.append((running_validation_loss, correct / len(vx)))
+    print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
 
 parser = argparse.ArgumentParser(description='PyTorch Language ID Classifier Trainer')
 parser.add_argument('--lr', type=float, default=0.0001,
@@ -32,6 +85,8 @@ parser.add_argument('--log-interval', type=int, default=5,
                     help='reports per epoch')
 parser.add_argument('--chkpt-interval', type=int, default=10,
                     help='how often to save checkpoints')
+parser.add_argument('--model-name', type=str, default="resnet34",
+                    help='data path')
 parser.add_argument('--load-model', type=str, default=None,
                     help='path of model to load')
 parser.add_argument('--save-model', action='store_true',
@@ -47,77 +102,33 @@ use_cuda = torch.cuda.is_available()
 print("CUDA: {}".format(use_cuda))
 
 # Data
-vx = VOXFORGE(args.data_path, langs=args.languages, label_type="lang")
+vx = VOXFORGE(args.data_path, langs=args.languages,
+              label_type="lang", use_cache=args.use_cache)
 #vx.find_max_len()
-vx.maxlen = 150000
-T = tat.Compose([
-        tat.PadTrim(vx.maxlen),
-        tat.MEL(n_mels=args.freq_bands),
-        tat.BLC2CBL(),
-        tvt.ToPILImage(),
-        tvt.Scale((args.freq_bands, args.freq_bands)),
-        tvt.ToTensor(),
-    ])
-TT = spl_transforms.LENC(vx.LABELS)
+
+# Data Loader and Model Configuration
+cfg_model = cfg.MODELS[args.model_name]
+T = cfg_model["T"]
 vx.transform = T
+TT = spl_transforms.LENC(vx.LABELS)
 vx.target_transform = TT
 dl = data.DataLoader(vx, batch_size=args.batch_size,
                      num_workers=args.num_workers, shuffle=True)
 
-# Model and Loss
-model = models.resnet.resnet34(True, num_langs=5)
+# Model and Loss Initializations
+model = cfg_model["model"]
 if args.load_model is not None:
-    model.load_state_dict(torch.load(args.load_model))
+    model.load_state_dict(torch.load(cfg_model["state_dict_path"]))
+model = model.cuda() if use_cuda else model
 print(model)
-criterion = nn.CrossEntropyLoss()
-plist = nn.ParameterList()
-if args.train_full_model:
-    #plist.extend(list(model[0].parameters()))
-    plist.extend(list(model.parameters()))
-    optimizer = torch.optim.SGD(plist, lr=args.lr, momentum=0.9)
-else:
-    plist.extend(list(model[1].fc.parameters()))
-    optimizer = torch.optim.Adam(plist, lr=args.lr)
+cfg_train = cfg.TRAINING[args.model_name]
+criterion = cfg_train["criterion"]
+optimizer = create_optimizer(cfg_train["fc_layer"]["optimizer"],
+                             cfg_train["fc_layer"]["params"],
+                             cfg_train["fc_layer"]["optim_kwargs"])
 
-if use_cuda:
-    model = model.cuda()
-
-def train(epoch):
-    vx.set_split("train")
-    for i, (mb, tgts) in enumerate(dl):
-        model.train()
-        if use_cuda:
-            mb, tgts = mb.cuda(), tgts.cuda()
-        mb, tgts = Variable(mb), Variable(tgts)
-        model.zero_grad()
-        out = model(mb)
-        loss = criterion(out, tgts)
-        loss.backward()
-        optimizer.step()
-        train_losses.append(loss.data[0])
-        print(loss.data[0])
-        if i % args.log_interval == 0:
-            validate(epoch)
-        vx.set_split("train")
-
-def validate(epoch):
-    model.eval()
-    vx.set_split("valid")
-    running_validation_loss = 0
-    correct = 0
-    for mb_valid, tgts_valid in dl:
-        if use_cuda:
-            mb_valid, tgts_valid = mb_valid.cuda(), tgts_valid.cuda()
-        mb_valid, tgts_valid = Variable(mb_valid), Variable(tgts_valid)
-        out_valid = model(mb_valid)
-        loss_valid = criterion(out_valid, tgts_valid)
-        running_validation_loss += loss_valid.data[0]
-        correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
-    valid_losses.append((running_validation_loss, correct / len(vx)))
-    print("loss: {}, acc: {}".format(running_validation_loss, correct / len(vx)))
-
-
-epochs = args.epochs
+# Train
+epochs = sum([v for (k, v) in cfg_train["epochs"]])
 train_losses = []
 valid_losses = []
 for epoch in range(epochs):
@@ -125,4 +136,7 @@ for epoch in range(epochs):
     train(epoch)
     if args.save_model:
         if epoch % args.chkpt_interval == 0 or epoch+1 == epochs:
-            torch.save(model.state_dict(), "output/states/model_resnet34_{}.pt".format(epoch+1))
+            torch.save(model.state_dict(), "output/states/{}_{}.pt".format(args.model_name, epoch+1))
+with open("output/train_losses_{}.csv".format(args.model_name), "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerows(train_losses)

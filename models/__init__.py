@@ -1,1 +1,4 @@
-__all__ = ["cnn", "resnet", "squeezenet"]
+import models.resnet
+import models.squeezenet
+
+__all__ = ["resnet", "squeezenet"]
