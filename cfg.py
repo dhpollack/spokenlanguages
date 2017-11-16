@@ -187,7 +187,7 @@ class CFG(object):
     def get_train(self):
         return self.fit
 
-    def validate(self):
+    def validate(self, epoch):
         if "resnet34" in self.model_name:
             self.model.eval()
             self.vx.set_split("valid")
