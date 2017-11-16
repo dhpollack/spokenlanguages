@@ -185,6 +185,7 @@ class CFG(object):
             train_losses.append(epoch_losses)
 
     def validate(self, epoch):
+        valid_losses = []
         if "resnet34" in self.model_name:
             self.model.eval()
             self.vx.set_split("valid")
