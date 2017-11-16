@@ -56,6 +56,8 @@ class CFG(object):
         self.criterion, self.optimizer = self.init_optimizer()
         self.save_model = args.save_model
         self.chkpt_interval = args.chkpt_interval
+        self.valid_losses = []
+        self.train_losses = []
 
     def get_model(self):
         use_pretrained = True if args.load_model is None else False
@@ -182,10 +184,9 @@ class CFG(object):
                 if i % args.log_interval == 0 and args.validate and i != 0:
                     self.validate(epoch)
                 self.vx.set_split("train")
-            train_losses.append(epoch_losses)
+            self.train_losses.append(epoch_losses)
 
     def validate(self, epoch):
-        valid_losses = []
         if "resnet34" in self.model_name:
             self.model.eval()
             self.vx.set_split("valid")
@@ -199,7 +200,7 @@ class CFG(object):
                 loss_valid = self.criterion(out_valid, tgts_valid)
                 running_validation_loss += loss_valid.data[0]
                 correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
-            valid_losses.append((running_validation_loss, correct / len(self.vx)))
+            self.valid_losses.append((running_validation_loss, correct / len(self.vx)))
             print("loss: {}, acc: {}".format(running_validation_loss, correct / len(self.vx)))
 
     def get_train(self):
