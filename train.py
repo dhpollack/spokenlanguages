@@ -6,6 +6,7 @@ import csv
 
 config = CFG()
 train = config.fit
+save = config.save
 
 epochs = sum([v for (k, v) in config.epochs])
 train_losses = []
@@ -14,5 +15,4 @@ for epoch in range(epochs):
     print("epoch {}".format(epoch + 1))
     train(epoch)
     if config.save_model and (epoch % config.chkpt_interval == 0 or epoch+1 == epochs):
-        print("saving model...")
-        #torch.save(model.state_dict(), "output/states/{}_{}.pt".format(args.model_name, epoch+1))
+        save(epoch)

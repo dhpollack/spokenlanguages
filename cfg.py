@@ -184,9 +184,6 @@ class CFG(object):
                 self.vx.set_split("train")
             train_losses.append(epoch_losses)
 
-    def get_train(self):
-        return self.fit
-
     def validate(self, epoch):
         if "resnet34" in self.model_name:
             self.model.eval()
@@ -203,3 +200,10 @@ class CFG(object):
                 correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
             valid_losses.append((running_validation_loss, correct / len(self.vx)))
             print("loss: {}, acc: {}".format(running_validation_loss, correct / len(self.vx)))
+
+    def get_train(self):
+        return self.fit
+
+    def save(self, epoch):
+        mstate = self.model.state_dict()
+        torch.save(mstate, "output/states/{}_{}.pt".format(self.model_name, epoch+1))
