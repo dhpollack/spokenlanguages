@@ -48,13 +48,15 @@ class VOXFORGE(data.Dataset):
 
     def __init__(self, basedir, transform=None, target_transform=None,
                  langs=["de", "en"], label_type="lang", download=False, num_zips=10,
-                 ratios=[0.7, 0.1, 0.2], split="train", use_cache=False,
+                 ratios=[0.7, 0.1, 0.2], split="train",
+                 use_cache=False, use_precompute=False,
                  mix_noise=True, mix_prob=.5, mix_vol=0.1,
                  randomize=False, dev_mode=False):
         _make_dir_iff(basedir)
         self.basedir = basedir
         self.rand = randomize
         self.use_cache = use_cache
+        self.use_precompute = use_precompute
         self.dev_mode = dev_mode
         self.num_zips = num_zips
         self.langs = langs
@@ -107,7 +109,8 @@ class VOXFORGE(data.Dataset):
 
         self.cache = {}
 
-        if self.use_cache:
+        if self.use_cache or self.use_precompute:
+            print("loading files into cache")
             self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], None) for ap in self.noises})
             self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], al) for ap, al in zip(audiomanifest, audiolabels)})
 
@@ -121,36 +124,24 @@ class VOXFORGE(data.Dataset):
         """
         idx_split = self.splits[self.split][index]
         audio_path = self.data[idx_split]
-        if self.use_cache and audio_path in self.cache:
+        if self.use_precompute:
             audio, target = self.cache[audio_path]
         else:
-            audio, sr = torchaudio.load(audio_path, normalization=True)
-            target = self.labels[idx_split]
-            assert sr == 16000
-
-        if self.split == "train" and self.mix_noise and self.mix_prob > random.random():
-            noise_path = random.choice(self.noises)
-            if noise_path in self.cache:
-                noise_sig, _ = self.cache[noise_path]
+            if self.use_cache and audio_path in self.cache:
+                audio, target = self.cache[audio_path]
             else:
-                noise_sig, _ = torchaudio.load(noise_path, normalization=True)
-            diff = audio.size(0) - noise_sig.size(0)
-            if diff > 0: # audio longer than noise
-                st = random.randrange(0, diff)
-                end = audio.size(0) - diff + st
-                audio[st:end] += noise_sig * self.mix_vol()
-            elif diff < 0:  # noise longer than audio
-                st = random.randrange(0, -diff)
-                end = st + audio.size(0)
-                audio += noise_sig[st:end] * self.mix_vol()
-            else:
-                audio += noise_sig * self.mix_vol()
+                audio, sr = torchaudio.load(audio_path, normalization=True)
+                target = self.labels[idx_split]
+                assert sr == 16000
 
-        if self.transform is not None:
-            audio = self.transform(audio)
+            if self.split == "train" and self.mix_noise and self.mix_prob > random.random():
+                audio = self._add_noise(audio)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+            if self.transform is not None:
+                audio = self.transform(audio)
+
+            if self.target_transform is not None:
+                target = self.target_transform(target)
 
         return audio, target
 
@@ -178,6 +169,24 @@ class VOXFORGE(data.Dataset):
         except:
             print("{} is not a valid language selection".format(lang))
 
+    def _add_noise(self, audio):
+        noise_path = random.choice(self.noises)
+        if noise_path in self.cache:
+            noise_sig, _ = self.cache[noise_path]
+        else:
+            noise_sig, _ = torchaudio.load(noise_path, normalization=True)
+        diff = audio.size(0) - noise_sig.size(0)
+        if diff > 0: # audio longer than noise
+            st = random.randrange(0, diff)
+            end = audio.size(0) - diff + st
+            audio[st:end] += noise_sig * self.mix_vol()
+        elif diff < 0:  # noise longer than audio
+            st = random.randrange(0, -diff)
+            end = st + audio.size(0)
+            audio += noise_sig[st:end] * self.mix_vol()
+        else:
+            audio += noise_sig * self.mix_vol()
+        return audio
 
     def _get_source(self, url):
         response = requests.get(url)
@@ -348,6 +357,18 @@ class VOXFORGE(data.Dataset):
         dest_prompts_file = os.path.join(self.processeddir, "prompts", "prompts.json")
         with open(dest_prompts_file, "w", encoding='utf8') as json_f:
             json_f.write(prompts)
+
+    def precompute_transforms(self):
+
+        for idx_split in self.splits["train"]:
+            k = self.data[idx_split]
+            audio, target = self.cache[k]
+            if self.transform is not None:
+                audio = self.transform(audio)
+
+            if self.target_transform is not None:
+                target = self.target_transform(target)
+            self.cache[k] = (audio, target)
 
 def _make_dir_iff(d):
     try:

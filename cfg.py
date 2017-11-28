@@ -24,6 +24,8 @@ parser.add_argument('--data-path', type=str, default="data/voxforge",
                     help='data path')
 parser.add_argument('--use-cache', action='store_true',
                     help='use cache in the dataloader')
+parser.add_argument('--use-precompute', action='store_true',
+                    help='precompute transformations')
 parser.add_argument('--num-workers', type=int, default=0,
                     help='number of workers for data loader')
 parser.add_argument('--validate', action='store_true',
@@ -70,7 +72,8 @@ class CFG(object):
 
     def get_dataloader(self):
         vx = VOXFORGE(args.data_path, langs=args.languages,
-                      label_type="lang", use_cache=args.use_cache)
+                      label_type="lang", use_cache=args.use_cache,
+                      use_precompute=args.use_precompute)
         if self.model_name == "resnet34_conv":
             T = tat.Compose([
                     tat.PadTrim(self.max_len),
@@ -113,6 +116,10 @@ class CFG(object):
             TT = spl_transforms.LENC(vx.LABELS)
         vx.transform = T
         vx.target_transform = TT
+        if args.use_precompute:
+            print("precomputing transformations")
+            vx.precompute_transforms()
+            print("finished precomputation of transforms")
         dl = data.DataLoader(vx, batch_size=args.batch_size,
                              num_workers=args.num_workers, shuffle=True)
         return vx, dl
