@@ -37,6 +37,8 @@ class VOXFORGE(data.Dataset):
         "it": 'http://www.repository.voxforge1.org/downloads/it/Trunk/Audio/Main/16kHz_16bit/',
     }
 
+    NOISES = ("noises", 'http://web.cse.ohio-state.edu/pnl/corpus/HuNonspeech/Nonspeech.zip')
+
     LABELS = dict([[x, i] for i, x in enumerate(sorted(list(URLS.keys())))])
 
     SPLITS = ["train", "valid", "test"]
@@ -47,6 +49,7 @@ class VOXFORGE(data.Dataset):
     def __init__(self, basedir, transform=None, target_transform=None,
                  langs=["de", "en"], label_type="lang", download=False, num_zips=10,
                  ratios=[0.7, 0.1, 0.2], split="train", use_cache=False,
+                 mix_noise=True, mix_prob=.5, mix_vol=0.1,
                  randomize=False, dev_mode=False):
         _make_dir_iff(basedir)
         self.basedir = basedir
@@ -62,7 +65,11 @@ class VOXFORGE(data.Dataset):
         self.processeddir = os.path.join(basedir, "processed")
         _make_dir_iff(self.processeddir)
         _make_dir_iff(os.path.join(self.processeddir, "audio"))
+        _make_dir_iff(os.path.join(self.processeddir, "noises"))
         _make_dir_iff(os.path.join(self.processeddir, "prompts"))
+        self.mix_noise = mix_noise
+        self.mix_prob = mix_prob
+        self.mix_vol = lambda: random.uniform(-1, 1) * 0.3 * mix_vol + mix_vol
 
         if download:
             self.batch_download(num_zips, self.rand, self.allow_anon)
@@ -94,7 +101,15 @@ class VOXFORGE(data.Dataset):
                      range(split_pts[1], num_files)]
         self.splits = {spn: spi for spn, spi in zip(self.SPLITS, split_pts)}
         self.data, self.labels = audiomanifest, audiolabels
+
+        # noise manifest
+        self.noises = [os.path.join(os.path.join(self.processeddir, "audio"), x) for x in os.listdir(os.path.join(self.processeddir, "audio"))]
+
         self.cache = {}
+
+        if self.use_cache:
+            self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], None) for ap in self.noises})
+            self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], al) for ap, al in zip(audiomanifest, audiolabels)})
 
     def __getitem__(self, index):
         """
@@ -113,14 +128,29 @@ class VOXFORGE(data.Dataset):
             target = self.labels[idx_split]
             assert sr == 16000
 
-            if self.transform is not None:
-                audio = self.transform(audio)
+        if self.split == "train" and self.mix_noise and self.mix_prob > random.random():
+            noise_path = random.choice(self.noises)
+            if noise_path in self.cache:
+                noise_sig, _ = self.cache[noise_path]
+            else:
+                noise_sig, _ = torchaudio.load(noise_path, normalization=True)
+            diff = audio.size(0) - noise_sig.size(0)
+            if diff > 0: # audio longer than noise
+                st = random.randrange(0, diff)
+                end = audio.size(0) - diff + st
+                audio[st:end] += noise_sig * self.mix_vol()
+            elif diff < 0:  # noise longer than audio
+                st = random.randrange(0, -diff)
+                end = st + audio.size(0)
+                audio += noise_sig[st:end] * self.mix_vol()
+            else:
+                audio += noise_sig * self.mix_vol()
 
-            if self.target_transform is not None:
-                target = self.target_transform(target)
+        if self.transform is not None:
+            audio = self.transform(audio)
 
-            if self.use_cache:
-                self.cache[audio_path] = (audio, target)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
 
         return audio, target
 
@@ -219,10 +249,50 @@ class VOXFORGE(data.Dataset):
                 if result==0: print('Unable to download', link)
                 elif counter == maximum: break
 
+        # download noises
+
+        nlabel, nuri = self.NOISES
+        noiseszipdir = os.path.join(self.basedir, "raw", "zips", nlabel)
+        _make_dir_iff(noiseszipdir)
+        file_name = os.path.basename(nuri)
+        zip_path = os.path.join(noiseszipdir, file_name)
+        if os.path.exists(zip_path):
+            print("Noises already downloaded")
+        else:
+            resp = requests.get(nuri)
+            if resp.status_code == 200:
+                # Download and save
+                with open(zip_path, 'wb') as f:
+                    f.write(resp.content)
+
     def extract_all(self):
         # import needed only for extracting zips
         import tarfile
 
+        # extract noises
+        nlabel, nuri = self.NOISES
+        noiseszipdir = os.path.join(self.basedir, "raw", "zips", nlabel)
+        file_name = os.path.basename(nuri)
+        zip_path = os.path.join(noiseszipdir, file_name)
+        if not os.path.isdir(os.path.join(noiseszipdir, "Nonspeech")):
+            import zipfile
+            with zipfile.ZipFile(zip_path, "r") as zip_f:
+                zip_f.extractall(noiseszipdir)
+
+        audiodir = os.path.join(noiseszipdir, "Nonspeech")
+        for audio_fp in os.listdir(audiodir):
+            audio_fp_name = os.path.basename(audio_fp)
+            src_file_path = os.path.join(audiodir, audio_fp_name)
+            dest_file_path = os.path.join(self.processeddir,
+                                          "noises",
+                                          audio_fp_name)
+            if not os.path.isfile(dest_file_path):
+                # resample
+                sox_cmd = "sox {} -r 16000 {}".format(src_file_path, dest_file_path)
+                os.system(sox_cmd)
+
+
+        # extract languages
         prompts = {}
         for lang in self.langs:
             prompts[lang] = {}
