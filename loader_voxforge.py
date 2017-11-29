@@ -1,6 +1,7 @@
 from __future__ import print_function
 import torchaudio
 import torch.utils.data as data
+from torch.autograd import Variable
 from torch import stack
 import os
 import errno
@@ -8,7 +9,7 @@ import random
 import shutil
 import json
 import math
-from itertools import accumulate
+from itertools import accumulate, chain
 
 import requests
 import bs4
@@ -360,7 +361,7 @@ class VOXFORGE(data.Dataset):
 
     def precompute_transforms(self):
 
-        for idx_split in self.splits["train"]:
+        for idx_split in chain(self.splits["train"], self.splits["valid"]):
             k = self.data[idx_split]
             audio, target = self.cache[k]
             if self.transform is not None:

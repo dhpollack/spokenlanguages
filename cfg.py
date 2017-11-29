@@ -76,11 +76,11 @@ class CFG(object):
                       use_precompute=args.use_precompute)
         if self.model_name == "resnet34_conv":
             T = tat.Compose([
-                    tat.PadTrim(self.max_len),
+                    #tat.PadTrim(self.max_len),
                     tat.MEL(n_mels=224),
                     tat.BLC2CBL(),
                     tvt.ToPILImage(),
-                    tvt.Scale((224, 224)),
+                    tvt.Resize((224, 224)),
                     tvt.ToTensor(),
                 ])
             TT = spl_transforms.LENC(vx.LABELS)
@@ -110,7 +110,7 @@ class CFG(object):
                     spl_transforms.DummyDim(),
                     tat.BLC2CBL(),
                     tvt.ToPILImage(),
-                    tvt.Scale((224, 224)),
+                    tvt.Resize((224, 224)),
                     tvt.ToTensor(),
                 ])
             TT = spl_transforms.LENC(vx.LABELS)
@@ -133,10 +133,13 @@ class CFG(object):
             self.L["fc_layer"]["optimizer"] = torch.optim.Adam
             self.L["fc_layer"]["params"] = self.model[1].fc.parameters()
             self.L["fc_layer"]["optim_kwargs"] = {"lr": 0.0001,}
+            self.L["fc_layer"]["precompute"] = nn.Sequential(self.model[0], *list(self.model[1].children())[:-1])
+            self.L["fc_layer"]["model"] = self.model[1].fc
             self.L["full_model"] = {}
             self.L["full_model"]["optimizer"] = torch.optim.SGD
             self.L["full_model"]["params"] = self.model.parameters()
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
+            self.L["full_model"]["model"] = self.model
         optim_layer, _ = self.epochs[0]
         opt = self.L[optim_layer]["optimizer"]
         params = self.L[optim_layer]["params"]
@@ -172,6 +175,8 @@ class CFG(object):
 
     def fit(self, epoch):
         if "resnet34" in self.model_name:
+            if args.use_precompute:
+                self.precompute(self.L["fc_layer"]["precompute"])
             model = self.model
             self.vx.set_split("train")
             self.optimizer = self.get_optimizer(epoch)
@@ -216,3 +221,25 @@ class CFG(object):
     def save(self, epoch):
         mstate = self.model.state_dict()
         torch.save(mstate, "output/states/{}_{}.pt".format(self.model_name, epoch+1))
+
+    def precompute(self, m):
+        if "resnet34" in self.model_name:
+            dl = data.DataLoader(self.vx, batch_size=args.batch_size,
+                                 num_workers=args.num_workers, shuffle=False)
+            m.eval()
+            for splt in ["train", "valid"]:
+                self.vx.set_split(splt)
+                c = self.vx.splits[splt].start
+                for i, (mb, tgts) in enumerate(dl):
+                    bs = mb.size(0)
+                    if self.use_cuda:
+                        mb = mb.cuda()
+                    mb = Variable(mb)
+                    m.zero_grad()
+                    out = m(mb).data.cpu()
+                    print(out.size())
+                    for j_i, j_k in enumerate(range(c, c+bs)):
+                        idx_split = self.vx.splits[splt][j_k]
+                        k = self.vx.data[idx_split]
+                        self.vx.cache[k] = (out[j_i], tgts[j_i])
+                    c += bs
