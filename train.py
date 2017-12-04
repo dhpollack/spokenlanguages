@@ -16,3 +16,9 @@ for epoch in range(epochs):
     train(epoch)
     if config.save_model and (epoch % config.chkpt_interval == 0 or epoch+1 == epochs):
         save(epoch)
+with open("train_losses_{}.csv".format(config.model_name), "w", newline='') as f:
+    writer = csv.writer(f)
+    writer.writerows(train_losses)
+with open("valid_losses_{}.csv".format(config.model_name), "w", newline='') as f:
+    writer = csv.writer(f)
+    writer.writerows(valid_losses)
