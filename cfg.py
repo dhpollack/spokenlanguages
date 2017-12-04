@@ -236,7 +236,6 @@ class CFG(object):
                     mb = Variable(mb)
                     m.zero_grad()
                     out = m(mb).data.cpu()
-                    print(out.size())
                     for j_i, j_k in enumerate(range(c, c+bs)):
                         idx_split = self.vx.splits[splt][j_k]
                         k = self.vx.data[idx_split]
