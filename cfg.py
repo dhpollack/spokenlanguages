@@ -104,7 +104,7 @@ class CFG(object):
 
             T = tat.Compose([
                     tat.Scale(),
-                    tat.PadTrim(self.max_len, fill_value=1e-8),
+                    #tat.PadTrim(self.max_len, fill_value=1e-8),
                     spl_transforms.Preemphasis(),
                     spl_transforms.Sig2Features(ws, hs, td),
                     spl_transforms.DummyDim(),
@@ -117,9 +117,7 @@ class CFG(object):
         vx.transform = T
         vx.target_transform = TT
         if args.use_precompute:
-            print("precomputing transformations")
-            vx.precompute_transforms()
-            print("finished precomputation of transforms")
+            vx.load_precompute(args.model_name)
         dl = data.DataLoader(vx, batch_size=args.batch_size,
                              num_workers=args.num_workers, shuffle=True)
         return vx, dl

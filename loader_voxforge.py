@@ -2,7 +2,7 @@ from __future__ import print_function
 import torchaudio
 import torch.utils.data as data
 from torch.autograd import Variable
-from torch import stack
+from torch import stack, load
 import os
 import errno
 import random
@@ -110,7 +110,7 @@ class VOXFORGE(data.Dataset):
 
         self.cache = {}
 
-        if self.use_cache or self.use_precompute:
+        if self.use_cache:
             print("loading files into cache")
             self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], None) for ap in self.noises})
             self.cache.update({ap: (torchaudio.load(ap, normalization=True)[0], al) for ap, al in zip(audiomanifest, audiolabels)})
@@ -360,8 +360,10 @@ class VOXFORGE(data.Dataset):
             json_f.write(prompts)
 
     def precompute_transforms(self):
-
-        for idx_split in chain(self.splits["train"], self.splits["valid"]):
+        iter_chain = chain(self.splits["train"], self.splits["valid"])
+        for i, idx_split in enumerate(iter_chain):
+            if i % 50 == 0 and i != 0:
+                print("Precompute has done {} iterations".format(i))
             k = self.data[idx_split]
             audio, target = self.cache[k]
             if self.transform is not None:
@@ -370,6 +372,11 @@ class VOXFORGE(data.Dataset):
             if self.target_transform is not None:
                 target = self.target_transform(target)
             self.cache[k] = (audio, target)
+
+    def load_precompute(self, model_name):
+        print("loading precomputed transformations")
+        self.cache = load("output/features/{}_features.pt".format(model_name),
+                          map_location=lambda storage, loc: storage)
 
 def _make_dir_iff(d):
     try:
