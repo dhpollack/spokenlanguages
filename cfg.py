@@ -174,7 +174,8 @@ class CFG(object):
     def fit(self, epoch):
         if "resnet34" in self.model_name:
             if args.use_precompute:
-                self.precompute(self.L["fc_layer"]["precompute"])
+                pass # TODO implement network precomputation
+                #self.precompute(self.L["fc_layer"]["precompute"])
             model = self.model
             self.vx.set_split("train")
             self.optimizer = self.get_optimizer(epoch)

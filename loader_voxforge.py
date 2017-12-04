@@ -51,7 +51,7 @@ class VOXFORGE(data.Dataset):
                  langs=["de", "en"], label_type="lang", download=False, num_zips=10,
                  ratios=[0.7, 0.1, 0.2], split="train",
                  use_cache=False, use_precompute=False,
-                 mix_noise=True, mix_prob=.5, mix_vol=0.1,
+                 mix_noise=False, mix_prob=.5, mix_vol=0.1,
                  randomize=False, dev_mode=False):
         _make_dir_iff(basedir)
         self.basedir = basedir
