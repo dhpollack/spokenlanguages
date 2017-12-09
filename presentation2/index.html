@@ -1,0 +1,510 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/slides.com.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+    <div class="theme-font-montserrat theme-color-white-blue" style="width: 100%; height: 100%;">
+        <div class="reveal">
+            <div class="slides">
+                <section>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 800px; left: 80px; top: 70px;">
+                        <div class="sl-block-content" style="z-index: 12;">
+                            <p style="text-align:left">
+                                <span style="color:#FF0000">
+                                    <span style="font-size:1.6em">Language Identification on Audio using Deep Learning</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 80px; top: 241px;">
+                        <div class="sl-block-content" style="z-index: 13;">
+                            <p style="text-align: left;">
+                                <span style="font-size:1.2em">David Pollack</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 656px; left: 80px; top: 350px;">
+                        <div class="sl-block-content" style="z-index: 14;">
+                            <p style="text-align:left">Ladislaus von Bortkiewicz Chair of Statistics
+                                <br/>
+    Humboldt-Universität zu Berlin
+                                <br/>
+    http://lvb.wiwi.hu-berlin.de
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="min-width: 30px; min-height: 30px; width: 130px; height: 130px; left: 763px; top: 317px;">
+                        <div class="sl-block-content" style="z-index: 15;">
+                            <img style="" data-natural-width="130" data-natural-height="130" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4426786/hulogo.png"/>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="sl-block" data-block-type="text" style="width: 633px; left: 16px; top: 14px; height: auto;">
+                        <div class="sl-block-content" style="z-index: 11;">
+                            <p style="text-align:left">
+                                <span style="color:#A9A9A9">
+                                    <span style="font-size:0.9em">Template</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; min-width: 1px; min-height: 1px; left: 192px; top: 34px;">
+                        <div class="sl-block-content" data-line-x1="-196" data-line-y1="-153" data-line-x2="493" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="689" height="1" viewBox="-196 -153 689 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-196" y1="-153" x2="493" y2="-153"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-196" y1="-153" x2="493" y2="-153"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; min-width: 1px; min-height: 1px; left: 80px; top: 630px;">
+                        <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="min-width: 30px; min-height: 30px; width: 173px; height: 130px; left: 787px; top: 565px;">
+                        <div class="sl-block-content" style="z-index: 14;">
+                            <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="sl-block" data-block-type="text" style="width: 633px; left: 17px; top: 17px; height: auto;">
+                        <div class="sl-block-content" style="z-index: 11;">
+                            <p style="text-align:left">
+                                <span style="color:#A9A9A9">
+                                    <span style="font-size:0.9em">Introduction</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 187px; top: 36px;">
+                        <div class="sl-block-content" data-line-x1="-206" data-line-y1="-153" data-line-x2="487" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="693" height="1" viewBox="-206 -153 693 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-206" y1="-153" x2="487" y2="-153"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-206" y1="-153" x2="487" y2="-153"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 81px; top: 630px;">
+                        <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="width: 173px; height: 130px; left: 787px; top: 565px;">
+                        <div class="sl-block-content" style="z-index: 14;">
+                            <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 794px; left: 80px; top: 78px;">
+                        <div class="sl-block-content" style="z-index: 15;">
+                            <p style="text-align:left">
+                                <span style="font-size:1.2em">Comparative analysis of different network architectures and pre-processing steps for the task of identifying the spoken language in short audio clips</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="min-width: 30px; min-height: 30px; width: 444px; height: 333px; left: 258px; top: 280px;">
+                        <div class="sl-block-content" style="z-index: 16;">
+                            <img style="" data-natural-width="552" data-natural-height="414" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4426818/note-sure-big-words.jpg"/>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="sl-block" data-block-type="text" style="width: 633px; left: 16px; top: 20px; height: auto;">
+                        <div class="sl-block-content" style="z-index: 11;">
+                            <p style="text-align:left">
+                                <span style="color:#A9A9A9">
+                                    <span style="font-size:0.9em">Outline</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 127px; top: 39px;">
+                        <div class="sl-block-content" data-line-x1="-260" data-line-y1="-153" data-line-x2="493" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="753" height="1" viewBox="-260 -153 753 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-260" y1="-153" x2="493" y2="-153"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-260" y1="-153" x2="493" y2="-153"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 80px; top: 630px;">
+                        <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="width: 173px; height: 130px; left: 787px; top: 565px;">
+                        <div class="sl-block-content" style="z-index: 14;">
+                            <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 253px; left: 80px; top: 176px;">
+                        <div class="sl-block-content" style="z-index: 15; line-height: 1.82;" data-has-line-height="">
+                            <ol>
+                                <li>Motivation</li>
+                                <li>Background</li>
+                                <li>Method</li>
+                                <li>Results</li>
+                                <li>Conclusion</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 80px; top: 86px;">
+                        <div class="sl-block-content" style="z-index: 16;">
+                            <p style="text-align: left;">
+                                <span style="color:#FF0000">
+                                    <span style="font-size:1.4em">Outline</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="sl-block" data-block-type="text" style="width: 633px; left: 16px; top: 14px; height: auto;">
+                        <div class="sl-block-content" style="z-index: 11;">
+                            <p style="text-align:left">
+                                <span style="color:#A9A9A9">
+                                    <span style="font-size:0.9em">Motivation</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 160px; top: 34px;">
+                        <div class="sl-block-content" data-line-x1="-228" data-line-y1="-153" data-line-x2="493" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="721" height="1" viewBox="-228 -153 721 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-228" y1="-153" x2="493" y2="-153"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-228" y1="-153" x2="493" y2="-153"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 80px; top: 630px;">
+                        <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="image" style="width: 173px; height: 130px; left: 787px; top: 565px;">
+                        <div class="sl-block-content" style="z-index: 14;">
+                            <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 80px; top: 86px;">
+                        <div class="sl-block-content" style="z-index: 15;">
+                            <p style="text-align: left;">
+                                <span style="font-size:1.4em">
+                                    <span style="color:#FF0000">Motivation</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 800px; left: 80px; top: 171px;">
+                        <div class="sl-block-content" style="z-index: 16; text-align: left;" dir="ui">
+                            <p>
+                                <span style="font-size:1.0em">Language Identification has many applications in machine learning and industry including:</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 335px; left: 80px; top: 263px;">
+                        <div class="sl-block-content" style="z-index: 17; line-height: 1.82;" data-has-line-height="">
+                            <ul>
+                                <li>Customer Support</li>
+                                <li>Speech-to-Text</li>
+                                <li>Speech Generation</li>
+                                <li>Accent Identification</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                <section class="stack">
+                    <section>
+                        <div class="sl-block" data-block-type="text" style="width: 633px; left: 16px; top: 14px; height: auto;">
+                            <div class="sl-block-content" style="z-index: 11;">
+                                <p style="text-align:left">
+                                    <span style="color:#A9A9A9">
+                                        <span style="font-size:0.9em">Background</span>
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 180px; top: 34px;">
+                            <div class="sl-block-content" data-line-x1="-208" data-line-y1="-153" data-line-x2="493" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="701" height="1" viewBox="-208 -153 701 1">
+                                    <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-208" y1="-153" x2="493" y2="-153"></line>
+                                    <line stroke="#aaaaaa" stroke-width="2" x1="-208" y1="-153" x2="493" y2="-153"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 80px; top: 630px;">
+                            <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                    <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                    <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="image" style="width: 173px; height: 130px; left: 787px; top: 565px;">
+                            <div class="sl-block-content" style="z-index: 14;">
+                                <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 80px; top: 86px;">
+                            <div class="sl-block-content" style="z-index: 15; color: rgb(255, 0, 0); font-size: 140%;">
+                                <p style="text-align: left;">Background</p>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 80px; top: 164px;">
+                            <div class="sl-block-content" style="z-index: 16;">
+                                <p style="text-align: left;">
+                                    <span style="font-size:1.2em">Preprocessing:</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 659px; left: 111px; top: 233px;">
+                            <div class="sl-block-content" style="z-index: 17; line-height: 1.82;" data-has-line-height="">
+                                <ul>
+                                    <li>Mel-Frequency Cepstral Coefficients (MFCC)</li>
+                                    <li>Spectrograms</li>
+                                    <li>Plain Convolutions</li>
+                                    <li>Dilated Convolutions</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+                    <section>
+                        <div class="sl-block" data-block-type="text" style="width: 633px; left: 16px; top: 14px; height: auto;">
+                            <div class="sl-block-content" style="z-index: 11;">
+                                <p style="text-align:left">
+                                    <span style="color:#A9A9A9">
+                                        <span style="font-size:0.9em">Background - Preprocessing</span>
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 380px; top: 34px;">
+                            <div class="sl-block-content" data-line-x1="-8" data-line-y1="-153" data-line-x2="493" data-line-y2="-153" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 12;">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="501" height="1" viewBox="-8 -153 501 1">
+                                    <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-8" y1="-153" x2="493" y2="-153"></line>
+                                    <line stroke="#aaaaaa" stroke-width="2" x1="-8" y1="-153" x2="493" y2="-153"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="line" style="width: auto; height: auto; left: 80px; top: 630px;">
+                            <div class="sl-block-content" data-line-x1="-300" data-line-y1="380" data-line-x2="420" data-line-y2="380" data-line-color="#aaaaaa" data-line-start-type="none" data-line-end-type="none" style="z-index: 13;">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="xMidYMid" width="720" height="1" viewBox="-300 380 720 1">
+                                    <line stroke="rgba(0,0,0,0)" stroke-width="15" x1="-300" y1="380" x2="420" y2="380"></line>
+                                    <line stroke="#aaaaaa" stroke-width="2" x1="-300" y1="380" x2="420" y2="380"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="image" style="width: 173px; height: 130px; left: 787px; top: 565px;">
+                            <div class="sl-block-content" style="z-index: 14;">
+                                <img style="" data-natural-width="400" data-natural-height="300" data-lazy-loaded="" data-src="https://s3.amazonaws.com/media-p.slid.es/uploads/789549/images/4340810/spectrogram_mel_German.png"/>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="text" style="height: auto; width: 600px; left: 80px; top: 86px;">
+                            <div class="sl-block-content" style="z-index: 15; color: rgb(255, 0, 0); font-size: 140%;">
+                                <p style="text-align:left">Short-Time Fourier Transform</p>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="math" style="width: auto; height: auto; min-width: 30px; min-height: 30px; left: 159px; top: 170px;">
+                            <div class="sl-block-style" style="z-index: 16;">
+                                <div class="sl-block-content" style="z-index: 16; font-size: 112%;">
+                                    <div class="math-input">\sum _{n=-\infty }^{\infty }x(n)w(n-m)e^{-i\omega n}</div>
+                                    <div class="math-output">
+                                        <span class="katex">
+                                            <span class="katex-mathml">
+                                                <math>
+                                                    <semantics>
+                                                        <mrow>
+                                                            <msubsup>
+                                                                <mo>∑</mo>
+                                                                <mrow>
+                                                                    <mi>n</mi>
+                                                                    <mo>=</mo>
+                                                                    <mo>−</mo>
+                                                                    <mi mathvariant="normal">∞</mi>
+                                                                </mrow>
+                                                                <mrow>
+                                                                    <mi mathvariant="normal">∞</mi>
+                                                                </mrow>
+                                                            </msubsup>
+                                                            <mi>x</mi>
+                                                            <mo>(</mo>
+                                                            <mi>n</mi>
+                                                            <mo>)</mo>
+                                                            <mi>w</mi>
+                                                            <mo>(</mo>
+                                                            <mi>n</mi>
+                                                            <mo>−</mo>
+                                                            <mi>m</mi>
+                                                            <mo>)</mo>
+                                                            <msup>
+                                                                <mi>e</mi>
+                                                                <mrow>
+                                                                    <mo>−</mo>
+                                                                    <mi>i</mi>
+                                                                    <mi>ω</mi>
+                                                                    <mi>n</mi>
+                                                                </mrow>
+                                                            </msup>
+                                                        </mrow>
+                                                        <annotation encoding="application/x-tex">\sum _{n=-\infty }^{\infty }x(n)w(n-m)e^{-i\omega n}</annotation>
+                                                    </semantics>
+                                                </math>
+                                            </span>
+                                            <span class="katex-html" aria-hidden="true">
+                                                <span class="strut" style="height: 0.824664em;"></span>
+                                                <span class="strut bottom" style="height: 1.18301em; vertical-align: -0.358341em;"></span>
+                                                <span class="base textstyle uncramped">
+                                                    <span class="mop">
+                                                        <span class="mop op-symbol small-op" style="top: -5e-06em;">∑</span>
+                                                        <span class="msupsub">
+                                                            <span class="vlist">
+                                                                <span class="" style="top: 0.30001em; margin-left: 0em; margin-right: 0.05em;">
+                                                                    <span class="fontsize-ensurer reset-size5 size5">
+                                                                        <span class="" style="font-size: 0em;">​</span>
+                                                                    </span>
+                                                                    <span class="reset-textstyle scriptstyle cramped mtight">
+                                                                        <span class="mord scriptstyle cramped mtight">
+                                                                            <span class="mord mathit mtight">n</span>
+                                                                            <span class="mrel mtight">=</span>
+                                                                            <span class="mord mtight">−</span>
+                                                                            <span class="mord mathrm mtight">∞</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                                <span class="" style="top: -0.364em; margin-right: 0.05em;">
+                                                                    <span class="fontsize-ensurer reset-size5 size5">
+                                                                        <span class="" style="font-size: 0em;">​</span>
+                                                                    </span>
+                                                                    <span class="reset-textstyle scriptstyle uncramped mtight">
+                                                                        <span class="mord scriptstyle uncramped mtight">
+                                                                            <span class="mord mathrm mtight">∞</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                                <span class="baseline-fix">
+                                                                    <span class="fontsize-ensurer reset-size5 size5">
+                                                                        <span class="" style="font-size: 0em;">​</span>
+                                                                    </span>​
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span class="mord mathit">x</span>
+                                                    <span class="mopen">(</span>
+                                                    <span class="mord mathit">n</span>
+                                                    <span class="mclose">)</span>
+                                                    <span class="mord mathit" style="margin-right: 0.02691em;">w</span>
+                                                    <span class="mopen">(</span>
+                                                    <span class="mord mathit">n</span>
+                                                    <span class="mbin">−</span>
+                                                    <span class="mord mathit">m</span>
+                                                    <span class="mclose">)</span>
+                                                    <span class="mord">
+                                                        <span class="mord mathit">e</span>
+                                                        <span class="msupsub">
+                                                            <span class="vlist">
+                                                                <span class="" style="top: -0.363em; margin-right: 0.05em;">
+                                                                    <span class="fontsize-ensurer reset-size5 size5">
+                                                                        <span class="" style="font-size: 0em;">​</span>
+                                                                    </span>
+                                                                    <span class="reset-textstyle scriptstyle uncramped mtight">
+                                                                        <span class="mord scriptstyle uncramped mtight">
+                                                                            <span class="mord mtight">−</span>
+                                                                            <span class="mord mathit mtight">i</span>
+                                                                            <span class="mord mathit mtight" style="margin-right: 0.03588em;">ω</span>
+                                                                            <span class="mord mathit mtight">n</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                                <span class="baseline-fix">
+                                                                    <span class="fontsize-ensurer reset-size5 size5">
+                                                                        <span class="" style="font-size: 0em;">​</span>
+                                                                    </span>​
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sl-block" data-block-type="text" style="height: auto; min-width: 30px; min-height: 30px; width: 600px; left: 180px; top: 331px;">
+                            <div class="sl-block-content" style="z-index: 17;">
+                                <ul>
+                                    <li style="text-align:left">x(n): signal at time point n</li>
+                                    <li style="text-align:left">w(n): window function (i.e. Hamming)</li>
+                                    <li style="text-align:left">ω: normalized units of radians/sample</li>
+                                    <li style="text-align:left">n: time step</li>
+                                    <li style="text-align:left">m: window length</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+            </div>
+        </div>
+    </div>
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
