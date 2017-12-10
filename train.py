@@ -9,8 +9,8 @@ train = config.fit
 save = config.save
 
 epochs = sum([v for (k, v) in config.epochs])
-train_losses = []
-valid_losses = []
+#train_losses = []
+#valid_losses = []
 for epoch in range(epochs):
     print("epoch {}".format(epoch + 1))
     train(epoch)
@@ -19,7 +19,7 @@ for epoch in range(epochs):
 
 with open("output/train_losses_{}.csv".format(config.model_name), "w", newline='') as f:
     writer = csv.writer(f)
-    writer.writerows(train_losses)
+    writer.writerows(config.train_losses)
 with open("output/valid_losses_{}.csv".format(config.model_name), "w", newline='') as f:
     writer = csv.writer(f)
-    writer.writerows(valid_losses)
+    writer.writerows(config.valid_losses)
