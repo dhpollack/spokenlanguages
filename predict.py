@@ -35,7 +35,7 @@ for i, (mb, tgt) in enumerate(config.dl):
         mb, tgt = mb.cuda(), tgt.cuda()
     mb, tgt = Variable(mb), Variable(tgt)
     out = torch.nn.functional.softmax(model(mb), dim=1)
-    out_print = out.data[0].numpy().tolist()[:3]
+    out_print = out.data[0].cpu().numpy().tolist()[:3]
     print([(label==RLENC[o], label, RLENC[o], out_print) for o, label in zip(out.data.max(1)[1], labels)])
     correct += (out.data.max(1)[1] == tgt.data).sum()
 print("acc: {}".format(correct / len(config.vx)))
