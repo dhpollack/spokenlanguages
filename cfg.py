@@ -176,17 +176,16 @@ class CFG(object):
             if args.use_precompute:
                 pass # TODO implement network precomputation
                 #self.precompute(self.L["fc_layer"]["precompute"])
-            model = self.model
             self.vx.set_split("train")
             self.optimizer = self.get_optimizer(epoch)
             epoch_losses = []
             for i, (mb, tgts) in enumerate(self.dl):
-                model.train()
+                self.model.train()
                 if self.use_cuda:
                     mb, tgts = mb.cuda(), tgts.cuda()
                 mb, tgts = Variable(mb), Variable(tgts)
-                model.zero_grad()
-                out = model(mb)
+                self.model.zero_grad()
+                out = self.model(mb)
                 loss = self.criterion(out, tgts)
                 loss.backward()
                 self.optimizer.step()
