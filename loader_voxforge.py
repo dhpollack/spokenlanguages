@@ -48,7 +48,7 @@ class VOXFORGE(data.Dataset):
     random.seed(12345)
 
     def __init__(self, basedir, transform=None, target_transform=None,
-                 langs=["de", "en"], label_type="lang", download=False, num_zips=10,
+                 langs=["de", "en", "es"], label_type="lang", download=False, num_zips=10,
                  ratios=[0.7, 0.1, 0.2], split="train",
                  use_cache=False, use_precompute=False,
                  mix_noise=False, mix_prob=.5, mix_vol=0.1,

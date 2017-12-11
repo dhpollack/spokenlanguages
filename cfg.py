@@ -66,7 +66,7 @@ class CFG(object):
         if "resnet34" in self.model_name:
             model = models.resnet.resnet34(use_pretrained, num_langs=5)
             if not use_pretrained:
-                model.load_state_dict(torch.load(args.load_model))
+                model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         model = model.cuda() if self.use_cuda else model
         return model
 
