@@ -143,7 +143,7 @@ class CFG(object):
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
             self.L["full_model"]["model"] = self.model
         elif "resnet101" in self.model_name:
-            self.epochs = [("fc_layer", 40), ("full_model", 100)]
+            self.epochs = [("fc_layer", 20), ("full_model", 50)]
             self.criterion = nn.CrossEntropyLoss()
             self.L["fc_layer"] = {}
             self.L["fc_layer"]["optimizer"] = torch.optim.Adam
@@ -220,6 +220,7 @@ class CFG(object):
             self.vx.set_split("valid")
             running_validation_loss = 0
             correct = 0
+            num_batches = len(self.dl)
             for mb_valid, tgts_valid in self.dl:
                 if self.use_cuda:
                     mb_valid, tgts_valid = mb_valid.cuda(), tgts_valid.cuda()
@@ -228,8 +229,8 @@ class CFG(object):
                 loss_valid = self.criterion(out_valid, tgts_valid)
                 running_validation_loss += loss_valid.data[0]
                 correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
-            self.valid_losses.append((running_validation_loss, correct / len(self.vx)))
-            print("loss: {}, acc: {}".format(running_validation_loss, correct / len(self.vx)))
+            self.valid_losses.append((running_validation_loss / num_batches, correct / len(self.vx)))
+            print("loss: {}, acc: {}".format(running_validation_loss / num_batches, correct / len(self.vx)))
 
     def get_train(self):
         return self.fit

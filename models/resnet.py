@@ -22,7 +22,8 @@ def resnet101(pretrained=False, num_langs=2, **kwargs):
 
     resnet = model_zoo.resnet101(pretrained=pretrained, **kwargs)
     # change the last fc layer
-    resnet.fc = nn.Linear(512 * 1, num_langs)
+
+    resnet.fc = nn.Linear(2048 * 1, num_langs)
 
     model = nn.Sequential(conv2d, resnet)
 
