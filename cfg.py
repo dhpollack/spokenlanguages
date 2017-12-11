@@ -74,7 +74,7 @@ class CFG(object):
         vx = VOXFORGE(args.data_path, langs=args.languages,
                       label_type="lang", use_cache=args.use_cache,
                       use_precompute=args.use_precompute)
-        if self.model_name == "resnet34_conv":
+        if self.model_name == "resnet34_conv" or self.model_name == "resnet101_conv":
             T = tat.Compose([
                     #tat.PadTrim(self.max_len),
                     tat.MEL(n_mels=224),
