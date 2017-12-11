@@ -67,6 +67,10 @@ class CFG(object):
             model = models.resnet.resnet34(use_pretrained, num_langs=5)
             if not use_pretrained:
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
+        elif "resnet101" in self.model_name:
+            model = models.resnet.resnet101(use_pretrained, num_langs=5)
+            if not use_pretrained:
+                model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         model = model.cuda() if self.use_cuda else model
         return model
 
@@ -186,7 +190,7 @@ class CFG(object):
         return self.optimizer
 
     def fit(self, epoch):
-        if "resnet34" in self.model_name:
+        if "resnet" in self.model_name:
             if args.use_precompute:
                 pass # TODO implement network precomputation
                 #self.precompute(self.L["fc_layer"]["precompute"])
@@ -211,7 +215,7 @@ class CFG(object):
             self.train_losses.append(epoch_losses)
 
     def validate(self, epoch):
-        if "resnet34" in self.model_name:
+        if "resnet" in self.model_name:
             self.model.eval()
             self.vx.set_split("valid")
             running_validation_loss = 0
@@ -235,7 +239,7 @@ class CFG(object):
         torch.save(mstate, "output/states/{}_{}.pt".format(self.model_name, epoch+1))
 
     def precompute(self, m):
-        if "resnet34" in self.model_name:
+        if "resnet" in self.model_name:
             dl = data.DataLoader(self.vx, batch_size=args.batch_size,
                                  num_workers=args.num_workers, shuffle=False)
             m.eval()
