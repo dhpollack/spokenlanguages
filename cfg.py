@@ -138,6 +138,20 @@ class CFG(object):
             self.L["full_model"]["params"] = self.model.parameters()
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
             self.L["full_model"]["model"] = self.model
+        elif "resnet101" in self.model_name:
+            self.epochs = [("fc_layer", 40), ("full_model", 100)]
+            self.criterion = nn.CrossEntropyLoss()
+            self.L["fc_layer"] = {}
+            self.L["fc_layer"]["optimizer"] = torch.optim.Adam
+            self.L["fc_layer"]["params"] = self.model[1].fc.parameters()
+            self.L["fc_layer"]["optim_kwargs"] = {"lr": 0.0001,}
+            self.L["fc_layer"]["precompute"] = nn.Sequential(self.model[0], *list(self.model[1].children())[:-1])
+            self.L["fc_layer"]["model"] = self.model[1].fc
+            self.L["full_model"] = {}
+            self.L["full_model"]["optimizer"] = torch.optim.SGD
+            self.L["full_model"]["params"] = self.model.parameters()
+            self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
+            self.L["full_model"]["model"] = self.model
         optim_layer, _ = self.epochs[0]
         opt = self.L[optim_layer]["optimizer"]
         params = self.L[optim_layer]["params"]
