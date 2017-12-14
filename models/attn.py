@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class EncoderRNN(nn.Module):
     def __init__(self, input_size, hidden_size, n_layers=1, batch_size=1):
-        super(EncoderRNN2, self).__init__()
+        super(EncoderRNN, self).__init__()
         self.n_layers = n_layers
         self.hidden_size = hidden_size
         self.batch_size = batch_size

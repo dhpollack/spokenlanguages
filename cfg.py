@@ -71,7 +71,12 @@ class CFG(object):
             model = models.resnet.resnet101(use_pretrained, num_langs=5)
             if not use_pretrained:
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
-        model = model.cuda() if self.use_cuda else model
+        if self.use_cuda:
+            model = model.cuda()
+            ngpu = torch.cuda.device_count()
+            if ngpu > 1:
+                print("Detected {} CUDA devices")
+                model = torch.nn.DataParallel(model)
         return model
 
     def get_dataloader(self):
