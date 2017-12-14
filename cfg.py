@@ -1,6 +1,7 @@
 import argparse
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
 from torch.autograd import Variable
 import models
 import torchaudio.transforms as tat
@@ -160,6 +161,8 @@ class CFG(object):
             vx.load_precompute(args.model_name)
         dl = data.DataLoader(vx, batch_size=args.batch_size,
                              num_workers=args.num_workers, shuffle=True)
+        if "attn" in self.model_name:
+            dl.collate_fn = pad_packed_collate
         return vx, dl
 
     def init_optimizer(self):
@@ -266,7 +269,8 @@ class CFG(object):
             epoch_losses = []
             encoder = self.model[0]
             decoder = self.model[1]
-            for i, (mb, tgts) in enumerate(self.dl):
+            input_type = torch.FloatTensor
+            for i, ((mb, lengths), tgts) in enumerate(self.dl):
                 # set model into train mode and clear gradients
                 encoder.train()
                 decoder.train()
@@ -274,20 +278,26 @@ class CFG(object):
                 decoder.zero_grad()
 
                 # set inputs and targets
-                if i == 0: print(mb.size())
+                #if i == 0: print(mb.size())
                 #mb = mb.transpose(2, 1) # [B x N x L] -> [B, L, N]
                 if self.use_cuda:
                     mb, tgts = mb.cuda(), tgts.cuda()
-                mb, tgts = Variable(mb), Variable(tgts)
+                if isinstance(mb, torch.nn.utils.rnn.PackedSequence):
+                    pass
+                else:
+                    mb = Variable(mb)
+                tgts = Variable(tgts)
                 #print(mb.size(), tgts.size())
-                encoder_hidden = encoder.initHidden(type(mb.data))
+                encoder_hidden = encoder.initHidden(input_type)
                 encoder_output, encoder_hidden = encoder(mb, encoder_hidden)
-                #print(encoder_output)
 
                 # Prepare input and output variables for decoder
                 dec_size = [[[0] * encoder.hidden_size]*1]*args.batch_size
                 #print(encoder_output.data.new(dec_size).size())
-                dec_i = Variable(encoder_output.data.new(dec_size))
+                enc_out_var, enc_out_len = unpack(encoder_output, batch_first=True)
+                dec_i = Variable(enc_out_var.data.new(dec_size))
+                #dec_i = Variable(encoder_output.data.new(dec_size))
+                #dec_i = encoder_output
                 dec_h = encoder_hidden # Use last (forward) hidden state from encoder
                 #print(decoder.n_layers, encoder_hidden.size(), dec_i.size(), dec_h.size())
 
@@ -313,7 +323,7 @@ class CFG(object):
                 # run through decoder in one shot
                 dec_o, dec_h, dec_attn = decoder(dec_i, dec_h, encoder_output)
                 #print(dec_o)
-                #print(dec_o.size(), dec_h.size(), dec_attn.size())
+                print(dec_o.size(), dec_h.size(), dec_attn.size())
                 #print(dec_o.view(-1, decoder.output_size).size(), tgts.view(-1).size())
 
                 # calculate loss and backprop
@@ -375,3 +385,38 @@ class CFG(object):
                         k = self.vx.data[idx_split]
                         self.vx.cache[k] = (out[j_i], tgts[j_i])
                     c += bs
+
+def pad_packed_collate(batch):
+    """Puts data, and lengths into a packed_padded_sequence then returns
+       the packed_padded_sequence and the labels. Set use_lengths to True
+       to use this collate function.
+
+       Args:
+         batch: (list of tuples) [(audio, target)].
+             audio is a FloatTensor
+             target is a LongTensor with a length of 8
+       Output:
+         packed_batch: (PackedSequence), see torch.nn.utils.rnn.pack_padded_sequence
+         labels: (Tensor), labels from the file names of the wav.
+
+    """
+    if len(batch) == 1:
+        sigs, labels = batch[0][0], batch[0][1]
+        lengths = [sigs.size(0)]
+        #sigs = sigs.t()
+        sigs.unsqueeze_(0)
+        labels = tensor.LongTensor([labels]).unsqueeze(0)
+    if len(batch) > 1:
+        sigs, labels, lengths = zip(*[(a, b, a.size(0)) for (a,b) in sorted(batch, key=lambda x: x[0].size(0), reverse=True)])
+        max_len, n_feats = sigs[0].size()
+        sigs = [pad_sig(s, max_len, n_feats) if s.size(0) != max_len else s for s in sigs]
+        sigs = torch.stack(sigs, 0)
+        labels = torch.LongTensor(labels).unsqueeze(0)
+    packed_batch = pack(Variable(sigs), lengths, batch_first=True)
+    return (packed_batch, lengths), labels
+
+def pad_sig(s, max_len, n_feats):
+    s_len = s.size(0)
+    s_new = s.new(max_len, n_feats).fill_(0)
+    s_new[:s_len] = s
+    return s_new

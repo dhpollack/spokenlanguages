@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
 from torch.autograd import Variable
 import torch.nn.functional as F
 
@@ -40,7 +41,6 @@ class Attn(nn.Module):
             self.v = nn.Parameter(torch.FloatTensor(batch_size, 1, hidden_size))
 
     def forward(self, hidden, encoder_outputs):
-        max_len = encoder_outputs.size(1)
 
         # get attn energies in one batch
         attn_energies = self.score(hidden, encoder_outputs)
@@ -97,14 +97,14 @@ class LuongAttnDecoderRNN(nn.Module):
         #       N = # of hidden features
 
         # Get the embedding of the current input word (last output word)
-        batch_size = input_seq.size(0)
+        batch_size = self.batch_size # without PackedSequence calc as input_seq.size(0)
 
         # Get current hidden state from input word and last hidden state
         rnn_output, hidden = self.gru(input_seq, last_hidden)
+        encoder_outputs, encoder_lengths = unpack(encoder_outputs, batch_first=True)
 
         # Calculate attention from current RNN state and all encoder outputs;
         # apply to encoder outputs to get weighted average
-        #print("decoder:", rnn_output.size(), encoder_outputs.size())
         attn_weights = self.attn(rnn_output, encoder_outputs)
         context = attn_weights.bmm(encoder_outputs) # [B, S, L] dot [B, L, N] -> [B, S, N]
         #print(attn_weights.size(), encoder_outputs.size(), context.size())
