@@ -163,6 +163,7 @@ class CFG(object):
                              num_workers=args.num_workers, shuffle=True)
         if "attn" in self.model_name:
             dl.collate_fn = pad_packed_collate
+            dl.drop_last = True
         return vx, dl
 
     def init_optimizer(self):
@@ -320,7 +321,7 @@ class CFG(object):
                 # run through decoder in one shot
                 dec_o, dec_h, dec_attn = decoder(dec_i, dec_h, encoder_output)
                 #print(dec_o)
-                print(dec_o.size(), dec_h.size(), dec_attn.size())
+                #print(dec_o.size(), dec_h.size(), dec_attn.size())
                 #print(dec_o.view(-1, decoder.output_size).size(), tgts.view(-1).size())
 
                 # calculate loss and backprop
