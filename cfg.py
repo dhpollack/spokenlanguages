@@ -159,11 +159,10 @@ class CFG(object):
         vx.target_transform = TT
         if args.use_precompute:
             vx.load_precompute(args.model_name)
-        dl = data.DataLoader(vx, batch_size=args.batch_size,
+        dl = data.DataLoader(vx, batch_size=args.batch_size, drop_last=True,
                              num_workers=args.num_workers, shuffle=True)
         if "attn" in self.model_name:
-            dl.collate_fn = pad_packed_collate
-            dl.drop_last = True
+            dl.collate_fn = sort_collate
         return vx, dl
 
     def init_optimizer(self):
@@ -279,8 +278,6 @@ class CFG(object):
                 decoder.zero_grad()
 
                 # set inputs and targets
-                #if i == 0: print(mb.size())
-                #mb = mb.transpose(2, 1) # [B x N x L] -> [B, L, N]
                 if self.use_cuda:
                     mb, tgts = mb.cuda(), tgts.cuda()
                 mb = pack(Variable(mb), lengths, batch_first=True)
@@ -295,29 +292,9 @@ class CFG(object):
                 enc_out_var, enc_out_len = unpack(encoder_output, batch_first=True)
                 dec_i = Variable(enc_out_var.data.new(dec_size))
                 #dec_i = Variable(encoder_output.data.new(dec_size))
-                #dec_i = encoder_output
                 dec_h = encoder_hidden # Use last (forward) hidden state from encoder
                 #print(decoder.n_layers, encoder_hidden.size(), dec_i.size(), dec_h.size())
 
-                """
-                # Run through decoder one time step at a time
-                # collect attentions
-                attentions = []
-                outputs = []
-                dec_i = Variable(torch.FloatTensor([[[0] * hidden_size] * batch_size]))
-                target_seq = Variable(torch.FloatTensor([[[-1] * hidden_size]*output_length]))
-                for t in range(output_length):
-                    #print("t:", t, dec_i.size())
-                    dec_o, dec_h, dec_attn = decoder2(
-                        dec_i, dec_h, encoder2_output
-                    )
-                    #print("decoder output", dec_o.size())
-                    dec_i = target_seq[:,t].unsqueeze(1) # Next input is current target
-                    outputs += [dec_o]
-                    attentions += [dec_attn]
-                dec_o = torch.cat(outputs, 1)
-                dec_attn = torch.cat(attentions, 1)
-                """
                 # run through decoder in one shot
                 dec_o, dec_h, dec_attn = decoder(dec_i, dec_h, encoder_output)
                 #print(dec_o)
@@ -353,8 +330,48 @@ class CFG(object):
                 loss_valid = self.criterion(out_valid, tgts_valid)
                 running_validation_loss += loss_valid.data[0]
                 correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
-            self.valid_losses.append((running_validation_loss / num_batches, correct / len(self.vx)))
-            print("loss: {}, acc: {}".format(running_validation_loss / num_batches, correct / len(self.vx)))
+        elif "attn" in self.model_name:
+            self.vx.set_split("valid")
+            running_validation_loss = 0
+            correct = 0
+            num_batches = len(self.dl)
+            encoder = self.model[0]
+            decoder = self.model[1]
+            input_type = torch.FloatTensor
+            for i, ((mb, lengths), tgts) in enumerate(self.dl):
+                # set model into train mode and clear gradients
+                encoder.eval()
+                decoder.eval()
+
+                # set inputs and targets
+                if self.use_cuda:
+                    mb, tgts = mb.cuda(), tgts.cuda()
+                mb = pack(Variable(mb), lengths, batch_first=True)
+                tgts = Variable(tgts)
+                #print(mb.size(), tgts.size())
+                encoder_hidden = encoder.initHidden(input_type)
+                encoder_output, encoder_hidden = encoder(mb, encoder_hidden)
+
+                # Prepare input and output variables for decoder
+                dec_size = [[[0] * encoder.hidden_size]*1]*args.batch_size
+                #print(encoder_output.data.new(dec_size).size())
+                enc_out_var, enc_out_len = unpack(encoder_output, batch_first=True)
+                dec_i = Variable(enc_out_var.data.new(dec_size))
+                #dec_i = Variable(encoder_output.data.new(dec_size))
+                dec_h = encoder_hidden # Use last (forward) hidden state from encoder
+                #print(decoder.n_layers, encoder_hidden.size(), dec_i.size(), dec_h.size())
+
+                # run through decoder in one shot
+                dec_o, dec_h, dec_attn = decoder(dec_i, dec_h, encoder_output)
+                # calculate loss and backprop
+                dec_o, tgts = dec_o.cpu(), tgts.cpu()
+                dec_o = dec_o.view(-1, decoder.output_size)
+                loss = self.criterion(dec_o, tgts.view(-1))
+                running_validation_loss += loss.data[0]
+                correct += (dec_o.data.max(1)[1] == tgts.data).sum()
+
+        self.valid_losses.append((running_validation_loss / num_batches, correct / len(self.vx)))
+        print("loss: {}, acc: {}".format(running_validation_loss / num_batches, correct / len(self.vx)))
 
     def get_train(self):
         return self.fit
@@ -384,18 +401,18 @@ class CFG(object):
                         self.vx.cache[k] = (out[j_i], tgts[j_i])
                     c += bs
 
-def pad_packed_collate(batch):
-    """Puts data, and lengths into a packed_padded_sequence then returns
-       the packed_padded_sequence and the labels. Set use_lengths to True
-       to use this collate function.
+def sort_collate(batch):
+    """Sorts data and lengths by length of data then returns
+       the (padded data, lengths) and labels.
 
        Args:
-         batch: (list of tuples) [(audio, target)].
-             audio is a FloatTensor
-             target is a LongTensor with a length of 8
+         batch: (list of tuples) [(sig, label)].
+             sig is a FloatTensor
+             label is an int
        Output:
-         packed_batch: (PackedSequence), see torch.nn.utils.rnn.pack_padded_sequence
-         labels: (Tensor), labels from the file names of the wav.
+         sigs: (FloatTensor), padded signals in desc lenght order
+         lengths: (list(int)), list of original lengths of sigs
+         labels: (LongTensor), labels from the file names of the wav.
 
     """
     if len(batch) == 1:
