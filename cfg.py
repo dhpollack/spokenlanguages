@@ -71,12 +71,35 @@ class CFG(object):
             model = models.resnet.resnet101(use_pretrained, num_langs=5)
             if not use_pretrained:
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
+        elif "attn" in self.model_name:
+            self.hidden_size = 500
+            kwargs_encoder = {
+                "input_size": args.freq_bands,
+                "hidden_size": self.hidden_size,
+                "n_layers": 1,
+                "batch_size": args.batch_size
+            }
+            kwargs_decoder = {
+                "hidden_size": self.hidden_size,
+                "output_size": 5,
+                "attn_model": "general",
+                "n_layers": 1,
+                "dropout": 0.0, # was 0.1
+                "batch_size": args.batch_size
+            }
+            model = models.attn.attn(kwargs_encoder, kwargs_decoder)
         if self.use_cuda:
-            model = model.cuda()
+            if isinstance(model, list):
+                model = [m.cuda() for m in model]
+            else:
+                model = model.cuda()
             ngpu = torch.cuda.device_count()
             if ngpu > 1:
                 print("Detected {} CUDA devices")
-                model = torch.nn.DataParallel(model)
+                if isinstance(model, list):
+                    model = [torch.nn.DataParallel(m) for m in model]
+                else:
+                    model = torch.nn.DataParallel(model)
         return model
 
     def get_dataloader(self):
@@ -123,6 +146,14 @@ class CFG(object):
                     tvt.ToTensor(),
                 ])
             TT = spl_transforms.LENC(vx.LABELS)
+        elif "attn" in self.model_name:
+            T = tat.Compose([
+                    tat.MEL(n_mels=224),
+                    spl_transforms.SqueezeDim(2),
+                    tat.LC2CL(),
+                    #tat.BLC2CBL(),
+                ])
+            TT = spl_transforms.LENC(vx.LABELS)
         vx.transform = T
         vx.target_transform = TT
         if args.use_precompute:
@@ -159,6 +190,17 @@ class CFG(object):
             self.L["full_model"] = {}
             self.L["full_model"]["optimizer"] = torch.optim.SGD
             self.L["full_model"]["params"] = self.model.parameters()
+            self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
+            self.L["full_model"]["model"] = self.model
+        elif "attn" in self.model_name:
+            self.epochs = [("full_model", 100)]
+            self.criterion = nn.CrossEntropyLoss()
+            self.L["full_model"] = {}
+            self.L["full_model"]["optimizer"] = torch.optim.RMSprop
+            self.L["full_model"]["params"] = [
+                    {"params": self.model[0].parameters()},
+                    {"params": self.model[1].parameters()}
+                ]
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
             self.L["full_model"]["model"] = self.model
         optim_layer, _ = self.epochs[0]
@@ -218,6 +260,75 @@ class CFG(object):
                     self.validate(epoch)
                 self.vx.set_split("train")
             self.train_losses.append(epoch_losses)
+        if "attn" in self.model_name:
+            self.vx.set_split("train")
+            self.optimizer = self.get_optimizer(epoch)
+            epoch_losses = []
+            encoder = self.model[0]
+            decoder = self.model[1]
+            for i, (mb, tgts) in enumerate(self.dl):
+                # set model into train mode and clear gradients
+                encoder.train()
+                decoder.train()
+                encoder.zero_grad()
+                decoder.zero_grad()
+
+                # set inputs and targets
+                if i == 0: print(mb.size())
+                #mb = mb.transpose(2, 1) # [B x N x L] -> [B, L, N]
+                if self.use_cuda:
+                    mb, tgts = mb.cuda(), tgts.cuda()
+                mb, tgts = Variable(mb), Variable(tgts)
+                #print(mb.size(), tgts.size())
+                encoder_hidden = encoder.initHidden(type(mb.data))
+                encoder_output, encoder_hidden = encoder(mb, encoder_hidden)
+                #print(encoder_output)
+
+                # Prepare input and output variables for decoder
+                dec_size = [[[0] * encoder.hidden_size]*1]*args.batch_size
+                #print(encoder_output.data.new(dec_size).size())
+                dec_i = Variable(encoder_output.data.new(dec_size))
+                dec_h = encoder_hidden # Use last (forward) hidden state from encoder
+                #print(decoder.n_layers, encoder_hidden.size(), dec_i.size(), dec_h.size())
+
+                """
+                # Run through decoder one time step at a time
+                # collect attentions
+                attentions = []
+                outputs = []
+                dec_i = Variable(torch.FloatTensor([[[0] * hidden_size] * batch_size]))
+                target_seq = Variable(torch.FloatTensor([[[-1] * hidden_size]*output_length]))
+                for t in range(output_length):
+                    #print("t:", t, dec_i.size())
+                    dec_o, dec_h, dec_attn = decoder2(
+                        dec_i, dec_h, encoder2_output
+                    )
+                    #print("decoder output", dec_o.size())
+                    dec_i = target_seq[:,t].unsqueeze(1) # Next input is current target
+                    outputs += [dec_o]
+                    attentions += [dec_attn]
+                dec_o = torch.cat(outputs, 1)
+                dec_attn = torch.cat(attentions, 1)
+                """
+                # run through decoder in one shot
+                dec_o, dec_h, dec_attn = decoder(dec_i, dec_h, encoder_output)
+                #print(dec_o)
+                #print(dec_o.size(), dec_h.size(), dec_attn.size())
+                #print(dec_o.view(-1, decoder.output_size).size(), tgts.view(-1).size())
+
+                # calculate loss and backprop
+                loss = self.criterion(dec_o.view(-1, decoder.output_size), tgts.view(-1))
+                #nn.utils.clip_grad_norm(encoder.parameters(), 0.05)
+                #nn.utils.clip_grad_norm(decoder.parameters(), 0.05)
+                loss.backward()
+                self.optimizer.step()
+                epoch_losses.append(loss.data[0])
+                print(loss.data[0])
+                if i % args.log_interval == 0 and args.validate and i != 0:
+                    self.validate(epoch)
+                self.vx.set_split("train")
+                self.train_losses.append(epoch_losses)
+
 
     def validate(self, epoch):
         if "resnet" in self.model_name:

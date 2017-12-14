@@ -46,7 +46,7 @@ class Attn(nn.Module):
         attn_energies = self.score(hidden, encoder_outputs)
 
         # Normalize energies to weights in range 0 to 1
-        return F.softmax(attn_energies)
+        return F.softmax(attn_energies, dim=2)
 
     def score(self, hidden, encoder_output):
         #print("attn.score:", hidden.size(), encoder_output.size())
@@ -107,7 +107,7 @@ class LuongAttnDecoderRNN(nn.Module):
         #print("decoder:", rnn_output.size(), encoder_outputs.size())
         attn_weights = self.attn(rnn_output, encoder_outputs)
         context = attn_weights.bmm(encoder_outputs) # [B, S, L] dot [B, L, N] -> [B, S, N]
-        print(attn_weights.size(), encoder_outputs.size(), context.size())
+        #print(attn_weights.size(), encoder_outputs.size(), context.size())
         #print("decoder context:", context.size())
 
         # Attentional vector using the RNN hidden state and context vector
@@ -120,3 +120,9 @@ class LuongAttnDecoderRNN(nn.Module):
 
         # Return final output, hidden state, and attention weights (for visualization)
         return output, hidden, attn_weights
+
+def attn(kwargs_encoder, kwargs_decoder):
+    encoder = EncoderRNN(**kwargs_encoder)
+    decoder = LuongAttnDecoderRNN(**kwargs_decoder)
+
+    return [encoder, decoder]

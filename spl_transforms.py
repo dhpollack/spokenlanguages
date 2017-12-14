@@ -58,6 +58,24 @@ class DummyDim(object):
 
         return tensor.unsqueeze(self.dim)
 
+class SqueezeDim(object):
+    """squeeze out a dimension
+    """
+    def __init__(self, dim=-1):
+        self.dim = dim
+    def __call__(self, tensor):
+        """
+
+        Args:
+            tensor (Tensor): Tensor with extra dim
+
+        Returns:
+            tensor (Tensor): Tensor without dim
+
+        """
+
+        return tensor.squeeze(self.dim)
+
 class BLC2CBL(object):
     """Permute a 3d tensor from Bands x samples (Length) x Channels to Channels x
        Bands x samples (Length)
