@@ -280,10 +280,9 @@ class CFG(object):
                 # set inputs and targets
                 #if i == 0: print(mb.size())
                 #mb = mb.transpose(2, 1) # [B x N x L] -> [B, L, N]
-                if isinstance(mb, torch.nn.utils.rnn.PackedSequence):
-                    pass
-                else:
-                    mb = Variable(mb)
+                if self.use_cuda:
+                    mb, tgts = mb.cuda(), tgts.cuda()
+                mb = pack(Variable(mb), lengths, batch_first=True)
                 tgts = Variable(tgts)
                 #print(mb.size(), tgts.size())
                 encoder_hidden = encoder.initHidden(input_type)
@@ -398,7 +397,6 @@ def pad_packed_collate(batch):
          labels: (Tensor), labels from the file names of the wav.
 
     """
-    use_cuda = torch.cuda.is_available()
     if len(batch) == 1:
         sigs, labels = batch[0][0], batch[0][1]
         lengths = [sigs.size(0)]
@@ -411,10 +409,7 @@ def pad_packed_collate(batch):
         sigs = [pad_sig(s, max_len, n_feats) if s.size(0) != max_len else s for s in sigs]
         sigs = torch.stack(sigs, 0)
         labels = torch.LongTensor(labels).unsqueeze(0)
-    if use_cuda:
-        sigs, labels = sigs.cuda(), labels.cuda()
-    packed_batch = pack(Variable(sigs), lengths, batch_first=True)
-    return (packed_batch, lengths), labels
+    return (sigs, lengths), labels
 
 def pad_sig(s, max_len, n_feats):
     s_len = s.size(0)
