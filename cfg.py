@@ -76,6 +76,10 @@ class CFG(object):
             model = models.resnet.resnet101(use_pretrained, num_langs=5)
             if not use_pretrained:
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
+        elif "squeezenet" in self.model_name:
+            model = models.squeezenet.squeezenet(use_pretrained, num_langs=5)
+            if not use_pretrained:
+                model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         elif "attn" in self.model_name:
             self.hidden_size = 500
             kwargs_encoder = {
@@ -106,7 +110,7 @@ class CFG(object):
         vx = VOXFORGE(args.data_path, langs=args.languages,
                       label_type="lang", mix_noise=args.mixin_noise,
                       use_cache=args.use_cache, use_precompute=args.use_precompute)
-        if self.model_name == "resnet34_conv" or self.model_name == "resnet101_conv":
+        if any((x for x in ["resnet34_conv", "resnet101_conv", "squeezenet"] if x == self.model_name)):
             T = tat.Compose([
                     #tat.PadTrim(self.max_len),
                     tat.MEL(n_mels=224),
@@ -198,6 +202,14 @@ class CFG(object):
             self.L["full_model"]["params"] = model.parameters()
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
             self.L["full_model"]["model"] = model
+        elif "squeezenet" in self.model_name:
+            self.epochs = [("full_model", 100)]
+            self.criterion = nn.CrossEntropyLoss()
+            self.L["full_model"] = {}
+            self.L["full_model"]["optimizer"] = torch.optim.SGD
+            self.L["full_model"]["params"] = model.parameters()
+            self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
+            self.L["full_model"]["model"] = model
         elif "attn" in self.model_name:
             self.epochs = [("full_model", 100)]
             self.criterion = nn.CrossEntropyLoss()
@@ -243,7 +255,7 @@ class CFG(object):
         return self.optimizer
 
     def fit(self, epoch):
-        if "resnet" in self.model_name:
+        if any((x for x in ["resnet", "squeezenet"] if x in self.model_name)):
             if args.use_precompute:
                 pass # TODO implement network precomputation
                 #self.precompute(self.L["fc_layer"]["precompute"])
@@ -319,7 +331,7 @@ class CFG(object):
 
 
     def validate(self, epoch):
-        if "resnet" in self.model_name:
+        if any((x for x in ["resnet", "squeezenet"] if x in self.model_name)):
             self.model.eval()
             self.vx.set_split("valid")
             running_validation_loss = 0
