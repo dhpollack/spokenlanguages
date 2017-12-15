@@ -52,7 +52,8 @@ class CFG(object):
     def __init__(self):
         self.max_len = 150000
         self.use_cuda = torch.cuda.is_available()
-        print("CUDA: {}".format(self.use_cuda))
+        self.ngpu = torch.cuda.device_count()
+        print("CUDA: {} with {} devices".format(self.use_cuda, self.ngpu))
         self.model_name = args.model_name
         self.model = self.get_model()
         self.vx, self.dl = self.get_dataloader()
@@ -94,8 +95,7 @@ class CFG(object):
                 model = [m.cuda() for m in model]
             else:
                 model = model.cuda()
-            ngpu = torch.cuda.device_count()
-            if ngpu > 1:
+            if self.ngpu > 1:
                 print("Detected {} CUDA devices")
                 if isinstance(model, list):
                     model = [torch.nn.DataParallel(m) for m in model]
@@ -167,45 +167,52 @@ class CFG(object):
 
     def init_optimizer(self):
         self.L = {}
+        if self.ngpu < 2:
+            model = self.model
+        else:
+            if isinstance(self.model, list):
+                model = [m.module for m in model]
+            else:
+                model = self.model.module
         if "resnet34" in self.model_name:
             self.epochs = [("fc_layer", 40), ("full_model", 100)]
             self.criterion = nn.CrossEntropyLoss()
             self.L["fc_layer"] = {}
             self.L["fc_layer"]["optimizer"] = torch.optim.Adam
-            self.L["fc_layer"]["params"] = self.model[1].fc.parameters()
+            self.L["fc_layer"]["params"] = model[1].fc.parameters()
             self.L["fc_layer"]["optim_kwargs"] = {"lr": 0.0001,}
-            self.L["fc_layer"]["precompute"] = nn.Sequential(self.model[0], *list(self.model[1].children())[:-1])
-            self.L["fc_layer"]["model"] = self.model[1].fc
+            self.L["fc_layer"]["precompute"] = nn.Sequential(model[0], *list(model[1].children())[:-1])
+            self.L["fc_layer"]["model"] = model[1].fc
             self.L["full_model"] = {}
             self.L["full_model"]["optimizer"] = torch.optim.SGD
-            self.L["full_model"]["params"] = self.model.parameters()
+            self.L["full_model"]["params"] = model.parameters()
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
-            self.L["full_model"]["model"] = self.model
+            self.L["full_model"]["model"] = model
         elif "resnet101" in self.model_name:
             self.epochs = [("fc_layer", 20), ("full_model", 50)]
             self.criterion = nn.CrossEntropyLoss()
             self.L["fc_layer"] = {}
             self.L["fc_layer"]["optimizer"] = torch.optim.Adam
-            self.L["fc_layer"]["params"] = self.model[1].fc.parameters()
+            self.L["fc_layer"]["params"] = model[1].fc.parameters()
             self.L["fc_layer"]["optim_kwargs"] = {"lr": 0.0001,}
-            self.L["fc_layer"]["precompute"] = nn.Sequential(self.model[0], *list(self.model[1].children())[:-1])
-            self.L["fc_layer"]["model"] = self.model[1].fc
+            self.L["fc_layer"]["precompute"] = nn.Sequential(model[0], *list(model[1].children())[:-1])
+            self.L["fc_layer"]["model"] = model[1].fc
             self.L["full_model"] = {}
             self.L["full_model"]["optimizer"] = torch.optim.SGD
-            self.L["full_model"]["params"] = self.model.parameters()
+            self.L["full_model"]["params"] = model.parameters()
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
-            self.L["full_model"]["model"] = self.model
+            self.L["full_model"]["model"] = model
         elif "attn" in self.model_name:
             self.epochs = [("full_model", 100)]
             self.criterion = nn.CrossEntropyLoss()
             self.L["full_model"] = {}
             self.L["full_model"]["optimizer"] = torch.optim.RMSprop
             self.L["full_model"]["params"] = [
-                    {"params": self.model[0].parameters()},
-                    {"params": self.model[1].parameters()}
+                    {"params": model[0].parameters()},
+                    {"params": model[1].parameters()}
                 ]
             self.L["full_model"]["optim_kwargs"] = {"lr": 0.0001, "momentum": 0.9,}
-            self.L["full_model"]["model"] = self.model
+            self.L["full_model"]["model"] = model
         optim_layer, _ = self.epochs[0]
         opt = self.L[optim_layer]["optimizer"]
         params = self.L[optim_layer]["params"]
