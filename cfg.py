@@ -383,8 +383,8 @@ class CFG(object):
     def save(self, epoch):
         mstate = self.model.state_dict()
         is_noisy = "_noisy" if self.mixin_noise else ""
-        oname = "output/states/{}{}_{}.pt".format(self.model_name, is_noisy, epoch+1)
-        torch.save(mstate, )
+        sname = "output/states/{}{}_{}.pt".format(self.model_name, is_noisy, epoch+1)
+        torch.save(mstate, sname)
 
     def precompute(self, m):
         if "resnet" in self.model_name:
