@@ -27,6 +27,8 @@ parser.add_argument('--use-cache', action='store_true',
                     help='use cache in the dataloader')
 parser.add_argument('--use-precompute', action='store_true',
                     help='precompute transformations')
+parser.add_argument('--mixin-noise', action='store_true',
+                    help='precompute transformations')
 parser.add_argument('--num-workers', type=int, default=0,
                     help='number of workers for data loader')
 parser.add_argument('--validate', action='store_true',
@@ -95,18 +97,14 @@ class CFG(object):
                 model = [m.cuda() for m in model]
             else:
                 model = model.cuda()
-            if self.ngpu > 1:
-                print("Detected {} CUDA devices")
-                if isinstance(model, list):
-                    model = [torch.nn.DataParallel(m) for m in model]
-                else:
-                    model = torch.nn.DataParallel(model)
+            if self.ngpu > 1 and not isinstance(model, list):
+                model = torch.nn.DataParallel(model)
         return model
 
     def get_dataloader(self):
         vx = VOXFORGE(args.data_path, langs=args.languages,
-                      label_type="lang", use_cache=args.use_cache,
-                      use_precompute=args.use_precompute)
+                      label_type="lang", mix_noise=args.mixin_noise,
+                      use_cache=args.use_cache, use_precompute=args.use_precompute)
         if self.model_name == "resnet34_conv" or self.model_name == "resnet101_conv":
             T = tat.Compose([
                     #tat.PadTrim(self.max_len),
@@ -167,13 +165,10 @@ class CFG(object):
 
     def init_optimizer(self):
         self.L = {}
-        if self.ngpu < 2:
+        if self.ngpu < 2 or "attn" in self.model_name:
             model = self.model
         else:
-            if isinstance(self.model, list):
-                model = [m.module for m in model]
-            else:
-                model = self.model.module
+            model = self.model.module
         if "resnet34" in self.model_name:
             self.epochs = [("fc_layer", 40), ("full_model", 100)]
             self.criterion = nn.CrossEntropyLoss()
