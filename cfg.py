@@ -62,6 +62,7 @@ class CFG(object):
         self.criterion, self.optimizer = self.init_optimizer()
         self.save_model = args.save_model
         self.chkpt_interval = args.chkpt_interval
+        self.mixin_noise = args.mixin_noise
         self.valid_losses = []
         self.train_losses = []
 
@@ -329,6 +330,7 @@ class CFG(object):
                     mb_valid, tgts_valid = mb_valid.cuda(), tgts_valid.cuda()
                 mb_valid, tgts_valid = Variable(mb_valid), Variable(tgts_valid)
                 out_valid = self.model(mb_valid)
+                out_valid, tgts_valid = out_valid.cpu(), tgts_valid.cpu()
                 loss_valid = self.criterion(out_valid, tgts_valid)
                 running_validation_loss += loss_valid.data[0]
                 correct += (out_valid.data.max(1)[1] == tgts_valid.data).sum()
@@ -380,7 +382,9 @@ class CFG(object):
 
     def save(self, epoch):
         mstate = self.model.state_dict()
-        torch.save(mstate, "output/states/{}_{}.pt".format(self.model_name, epoch+1))
+        is_noisy = "_noisy" if self.mixin_noise else ""
+        oname = "output/states/{}{}_{}.pt".format(self.model_name, is_noisy, epoch+1)
+        torch.save(mstate, )
 
     def precompute(self, m):
         if "resnet" in self.model_name:

@@ -17,9 +17,12 @@ for epoch in range(epochs):
     if config.save_model and (epoch % config.chkpt_interval == 0 or epoch+1 == epochs):
         save(epoch)
 
-with open("output/train_losses_{}.csv".format(config.model_name), "w", newline='') as f:
+is_noisy = "_noisy" if config.mixin_noise else ""
+tlosses_name = "output/train_losses_{}{}.csv".format(config.model_name, is_noisy)
+with open(tlosses_name, "w", newline='') as f:
     writer = csv.writer(f)
     writer.writerows(config.train_losses)
-with open("output/valid_losses_{}.csv".format(config.model_name), "w", newline='') as f:
+vlosses = "output/valid_losses_{}{}.csv".format(config.model_name, is_noisy)
+with open(vlosses, "w", newline='') as f:
     writer = csv.writer(f)
     writer.writerows(config.valid_losses)
