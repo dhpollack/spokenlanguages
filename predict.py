@@ -32,9 +32,11 @@ correct = 0
 for i, (mb, tgt) in enumerate(config.dl):
     labels = [RLENC[t] for t in tgt]
     if config.use_cuda:
-        mb, tgt = mb.cuda(), tgt.cuda()
+        mb = mb.cuda()
     mb, tgt = Variable(mb), Variable(tgt)
-    out = torch.nn.functional.softmax(model(mb), dim=1)
+    out = model(mb)
+    out = torch.nn.functional.softmax(out, dim=1)
+    out = out.cpu()
     out_print = out.data[0].cpu().numpy().tolist()[:3]
     print([(label==RLENC[o], label, RLENC[o], out_print) for o, label in zip(out.data.max(1)[1], labels)])
     correct += (out.data.max(1)[1] == tgt.data).sum()

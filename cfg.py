@@ -71,14 +71,20 @@ class CFG(object):
         if "resnet34" in self.model_name:
             model = models.resnet.resnet34(use_pretrained, num_langs=5)
             if not use_pretrained:
+                if self.ngpu > 1:
+                    model = nn.DataParallel(model).cuda()
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         elif "resnet101" in self.model_name:
             model = models.resnet.resnet101(use_pretrained, num_langs=5)
             if not use_pretrained:
+                if self.ngpu > 1:
+                    model = nn.DataParallel(model).cuda()
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         elif "squeezenet" in self.model_name:
             model = models.squeezenet.squeezenet(use_pretrained, num_langs=5)
             if not use_pretrained:
+                if self.ngpu > 1:
+                    model = nn.DataParallel(model).cuda()
                 model.load_state_dict(torch.load(args.load_model, map_location=lambda storage, loc: storage))
         elif "attn" in self.model_name:
             self.hidden_size = 500
@@ -102,7 +108,7 @@ class CFG(object):
                 model = [m.cuda() for m in model]
             else:
                 model = model.cuda()
-            if self.ngpu > 1 and not isinstance(model, list):
+            if self.ngpu > 1 and not isinstance(model, (list, nn.DataParallel)):
                 model = torch.nn.DataParallel(model)
         return model
 
