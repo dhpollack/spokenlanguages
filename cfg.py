@@ -399,7 +399,10 @@ class CFG(object):
         return self.fit
 
     def save(self, epoch):
-        mstate = self.model.state_dict()
+        if "attn" in self.model_name:
+            mstate = (self.model[0].state_dict(), self.model[1].state_dict())
+        else:
+            mstate = self.model.state_dict()
         is_noisy = "_noisy" if self.mixin_noise else ""
         sname = "output/states/{}{}_{}.pt".format(self.model_name, is_noisy, epoch+1)
         torch.save(mstate, sname)
